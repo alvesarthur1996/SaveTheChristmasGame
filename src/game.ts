@@ -6,6 +6,7 @@ import UI from './scenes/ui/UI';
 import GameOverScene from './scenes/gameOverScene';
 import { PhaserMatterCollisionPlugin } from 'phaser-matter-collision-plugin'
 import GameController from './controllers/gameController';
+import MadFactoryStage from './scenes/stages/madFactoryStage';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -44,6 +45,7 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [
     LoadingScene,
+    MadFactoryStage,
     GameScene,
     GameController,
     UI,
@@ -55,6 +57,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'matter',
     matter: {
+      // debug: true,
       gravity: {
         y: 0.75
       }

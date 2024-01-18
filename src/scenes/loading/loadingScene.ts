@@ -16,6 +16,8 @@ export default class LoadingScene extends Phaser.Scene {
         this.loadSprites();
         // this.loadAudios();
         this.load.tilemapTiledJSON('candy_land', '/maps/candy_land/teste.json');
+        this.load.tilemapTiledJSON('mad_factory', '/maps/mad_factory/mad_factory.json');
+
     }
 
     loadImages() {
@@ -42,7 +44,7 @@ export default class LoadingScene extends Phaser.Scene {
     create() {
         this.add.image(0,0,'loading_img').setScale(0.5).setOrigin(0);
         // setTimeout(()=>{
-            this.scene.start('game-controller');
+            this.scene.start('MadFactory');
         // }, 5000);
     }
 };

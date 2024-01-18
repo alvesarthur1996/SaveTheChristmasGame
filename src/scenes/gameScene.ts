@@ -2,13 +2,11 @@ import PlayerController, { Keys } from "../controllers/characters/playerControll
 import ObstaclesController from "../controllers/obstacles/obsctaclesController";
 import MetController from "../controllers/enemies/metController";
 import EnemyController from "../controllers/enemies/enemyController";
-import GameController from "../controllers/gameController";
 
 export default class GameScene extends Phaser.Scene {
     private playerController?: PlayerController;
     private obstacles!: ObstaclesController;
     private enemies!: Array<EnemyController>;
-    GameController!: GameController;
 
 
     constructor() {
@@ -19,12 +17,10 @@ export default class GameScene extends Phaser.Scene {
         this.scene.launch('UI');
         this.enemies = [];
         this.obstacles = new ObstaclesController();
-        this.GameController = data.context;
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.destroy();
         })
-        console.log(this.GameController.lifeCounter);
     }
 
     preload() {

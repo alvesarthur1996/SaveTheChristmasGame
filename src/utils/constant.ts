@@ -23,6 +23,7 @@ export const GameUtils: any =  {
         {key:'milk_tank', path: 'sprites/objects/milk_tank.png'},
         {key:'small_health', path: 'sprites/objects/small_life.png'},
         {key:'weapon_energy', path: 'sprites/objects/weapon_energy.png'},
+        {key:'megacommando', path: 'maps/mad_factory/megacommando.png'},
     ],
     Audios: [
         // {key:'main_menu', path: '/sounds/menu/main_menu.wav'},

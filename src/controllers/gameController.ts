@@ -10,7 +10,7 @@ export default class GameController extends Phaser.Scene {
     }
 
     init() {
-        this.scene.launch('TEST', {
+        this.scene.launch('MadFactory', {
             context: this
         });
     }

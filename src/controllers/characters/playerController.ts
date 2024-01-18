@@ -73,6 +73,10 @@ export default class PlayerController {
                 onEnter: this.moveOnEnter,
                 onUpdate: this.moveOnUpdate,
             })
+            .addState('climb', {
+                onEnter: this.climbOnEnter,
+                onUpdate: this.climbOnUpdate,
+            })
             .addState('move_shot', {
                 onEnter: this.moveShotOnEnter,
                 onUpdate: this.moveShotOnUpdate,
@@ -274,6 +278,26 @@ export default class PlayerController {
         });
     }
 
+    private climbOnEnter() {
+        this.sprite.play('idle');
+        this.sprite.setVelocityX(0);
+    }
+
+    private climbOnUpdate(dt) {
+        if (this.cursors.up.isDown)
+            this.sprite.setVelocityY(-2);
+        else if (this.cursors.down.isDown)
+            this.sprite.setVelocityY(-2);
+        else
+            this.sprite.setVelocityY(0);
+
+        const jumpTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.jump);
+
+        if (jumpTriggered)
+            this.stateMachine.setState('jump');
+    }
+
+
     private deathOnEnter() {
         this.sprite.play('death');
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
@@ -400,6 +424,18 @@ export default class PlayerController {
 
 
     private onSensorCollide({ bodyA, bodyB, pair }) {
+
+        if (bodyB.label == 'ladder') {
+            if (this.cursors.up.isDown && !this.stateMachine.isCurrentState('climb'))
+                this.stateMachine.setState('climb');
+            return;
+        }
+
+        if (bodyB.label.indexOf('camera_trigger') !== -1) {
+            events.emit(bodyB.label);
+            return;
+        }
+
         if (bodyA === this.sensors.left) {
             this.isTouching.left = true;
             if (pair.separation > 0.5) this.sprite.x += pair.separation - 0.5;
@@ -411,6 +447,8 @@ export default class PlayerController {
         }
 
         this.obstaclesHandler(bodyB);
+
+
 
         const gameObject = bodyB.gameObject
         if (!gameObject) return;
@@ -430,16 +468,21 @@ export default class PlayerController {
                 this.stateMachine.setState('spike_hit');
                 return
             }
-        } else {
-            if (this.obstacles.is('spike', body) || this.obstacles.is('pit', body)) {
-                this.stateMachine.setState('spike_hit');
-                return
-            }
-            if (this.obstacles.is('met_enemy', body)) {
-                this.lastEnemy = body.gameObject;
-                this.stateMachine.setState('enemy_hit');
-                return
-            }
+        }
+
+        if (this.obstacles.is('camera_trigger', body)) {
+            events.emit(body.label);
+            return;
+        }
+
+        if (this.obstacles.is('spike', body) || this.obstacles.is('pit', body)) {
+            this.stateMachine.setState('spike_hit');
+            return
+        }
+        if (this.obstacles.is('met_enemy', body)) {
+            this.lastEnemy = body.gameObject;
+            this.stateMachine.setState('enemy_hit');
+            return
         }
     }
 

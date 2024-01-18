@@ -41,6 +41,7 @@ export default class PlayerController {
     private speedY = 0;
     private health = 100;
     private invencibility = false;
+    private lifeCounter = 3;
 
     private lastEnemy?: Phaser.Physics.Matter.Sprite
 
@@ -76,6 +77,7 @@ export default class PlayerController {
             .addState('climb', {
                 onEnter: this.climbOnEnter,
                 onUpdate: this.climbOnUpdate,
+                onExit: this.climbOnExit,
             })
             .addState('move_shot', {
                 onEnter: this.moveShotOnEnter,
@@ -281,13 +283,14 @@ export default class PlayerController {
     private climbOnEnter() {
         this.sprite.play('idle');
         this.sprite.setVelocityX(0);
+        this.sprite.setIgnoreGravity(true)
     }
 
     private climbOnUpdate(dt) {
         if (this.cursors.up.isDown)
             this.sprite.setVelocityY(-2);
         else if (this.cursors.down.isDown)
-            this.sprite.setVelocityY(-2);
+            this.sprite.setVelocityY(2);
         else
             this.sprite.setVelocityY(0);
 
@@ -297,15 +300,20 @@ export default class PlayerController {
             this.stateMachine.setState('jump');
     }
 
+    private climbOnExit() {
+        this.sprite.setIgnoreGravity(false)
+    }
+
 
     private deathOnEnter() {
         this.sprite.play('death');
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
-        events.emit(GameEvents.LifeLoss, -1);
+        // events.emit(GameEvents.LifeLoss, -1);
+        this.lifeCounter--;
         this.scene.time.delayedCall(2000, () => {
             this.scene.cameras.main.fade(250, 0, 0, 0);
             this.scene.cameras.main.once("camerafadeoutcomplete", () => {
-                if (GameController.lifeCounter < 0)
+                if (this.lifeCounter < 0)
                     this.scene.scene.start("game-over")
                 else
                     this.scene.scene.restart()
@@ -316,7 +324,7 @@ export default class PlayerController {
     }
 
     private fallSpeedFactor(dt: number) {
-        let currentSpeed = this.speedY + (15 * (dt / 1000));
+        let currentSpeed = this.speedY + 0.25;
         console.log("SPEED: ", currentSpeed);
         if (currentSpeed > 8)
             currentSpeed = 8;
@@ -475,7 +483,7 @@ export default class PlayerController {
             return;
         }
 
-        if (this.obstacles.is('spike', body) || this.obstacles.is('pit', body)) {
+        if (this.obstacles.is('spike', body) || this.obstacles.is('pit', body) || this.obstacles.is('lethal', body)) {
             this.stateMachine.setState('spike_hit');
             return
         }

@@ -7,7 +7,7 @@ export default class MadFactoryStage extends Phaser.Scene {
     private playerController?: PlayerController;
     private obstacles!: ObstaclesController;
     private enemies!: Array<EnemyController>;
-
+    private room_cameras: any = {};
     constructor() {
         super('MadFactory');
     }
@@ -31,10 +31,27 @@ export default class MadFactoryStage extends Phaser.Scene {
         const Room_2: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_2', 'megacommando')?.setVisible(true);
         const Room_3: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_3', 'megacommando')?.setVisible(false);
 
-        this.cameras.main.setBounds(Room_1.x, Room_1.y, Room_1.width, Room_1.height);
-        console.log('Room_1', Room_1.x, Room_1.y, Room_1.width, Room_1.height);
-        console.log('Room_2', Room_2.x, Room_2.y, Room_2.width, Room_2.height);
-        console.log('Room_3', Room_3.x, Room_3.y, Room_3.width, Room_3.height);
+        this.room_cameras.room_1 = {
+            x: Room_1.x,
+            y: Room_1.y,
+            width: Room_1.width,
+            height: Room_1.height
+        }
+        this.room_cameras.room_2 = {
+            x: Room_1.x,
+            y: Room_2.y,
+            width: Room_2.width * .575,
+            height: Room_2.height * 0.65
+        }
+        this.room_cameras.room_3 = {
+            x: Room_3.x,
+            y: Room_3.y,
+            width: Room_3.width,
+            height: Room_3.height * 0.65
+        }
+
+
+        this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
 
         Room_1!.setCollisionByProperty({ collision: true });
         Room_2!.setCollisionByProperty({ collision: true });
@@ -50,7 +67,7 @@ export default class MadFactoryStage extends Phaser.Scene {
                     this.playerController = new PlayerController(this, this.obstacles);
                     this.playerController.setSpritePosition(x, y);
                     this.cameras.main.startFollow(this.playerController.getSprite(), true, 0.5, 0.5);
-                    this.cameras.main.zoom = 2
+                    this.cameras.main.zoom = 2.5
                     break;
                 case 'room_2_trigger':
                     const trigger_cam: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
@@ -61,7 +78,7 @@ export default class MadFactoryStage extends Phaser.Scene {
                     this.obstacles.add('camera_trigger', trigger_cam);
                     events.once('room_2_camera_trigger', () => {
                         Room_2.setVisible(true);
-                        this.cameras.main.setBounds(Room_1.x, Room_2.y, Room_2.width, Room_2.height);
+                        this.cameras.main.setBounds(this.room_cameras.room_2.x, this.room_cameras.room_2.y, this.room_cameras.room_2.width, this.room_cameras.room_2.height);
                         events.off('room_2_camera_trigger');
                     });
                     break;
@@ -74,7 +91,7 @@ export default class MadFactoryStage extends Phaser.Scene {
                     this.obstacles.add('camera_trigger', trigger_cam_3);
                     events.once('room_3_camera_trigger', () => {
                         Room_3.setVisible(true);
-                        this.cameras.main.setBounds(x, y * 0.5, Room_3.width, Room_3.height);
+                        this.cameras.main.setBounds(x, this.room_cameras.room_3.y, this.room_cameras.room_3.width, this.room_cameras.room_3.height);
                         events.off('room_3_camera_trigger');
                     });
                     break;
@@ -89,6 +106,13 @@ export default class MadFactoryStage extends Phaser.Scene {
                         isSensor: true,
                         label: 'ladder'
                     });
+                    break;
+                case 'lethal':
+                    const lethal = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                    });
+                    this.obstacles.add('lethal', lethal);
                     break;
 
             }

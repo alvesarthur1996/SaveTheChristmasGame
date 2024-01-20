@@ -1,5 +1,3 @@
-import GameController from "../controllers/gameController";
-
 export default class GameOverScene extends Phaser.Scene {
     constructor() {
         super({ key: 'game-over' });
@@ -16,7 +14,6 @@ export default class GameOverScene extends Phaser.Scene {
         const button = this.add.rectangle((width / 2), (height / 1.5), 150, 80, 0xffffff)
         .setInteractive()
         .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, ()=>{
-            GameController.lifeCounter = 3;
             this.scene.start('TEST')
         });
 

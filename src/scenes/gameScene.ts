@@ -1,5 +1,5 @@
 import PlayerController, { Keys } from "../controllers/characters/playerController";
-import ObstaclesController from "../controllers/obstacles/obsctaclesController";
+import ObstaclesController from "../controllers/obsctaclesController";
 import MetController from "../controllers/enemies/metController";
 import EnemyController from "../controllers/enemies/enemyController";
 

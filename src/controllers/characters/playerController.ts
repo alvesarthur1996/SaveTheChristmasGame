@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import StateMachine from "../stateMachine";
 import { sharedInstance as events } from '../../scenes/eventCentre';
-import ObstaclesController from '../obstacles/obsctaclesController';
+import ObstaclesController from '../obsctaclesController';
 import { Bodies } from 'matter';
 import Scene from '../../scenes/scene';
 import GameEvents from '../../utils/events';
-import GameController from '../gameController';
+import InteractionsController from '../interactionsController';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -33,6 +33,7 @@ export default class PlayerController {
     private sprite!: Phaser.Physics.Matter.Sprite;
     private sensors!: CollisionSensors
     private obstacles: ObstaclesController;
+    private interactions: InteractionsController;
     private stateMachine: StateMachine;
     private cursors!: Keys
     private destroyed = false;
@@ -41,13 +42,17 @@ export default class PlayerController {
     private speedY = 0;
     private health = 100;
     private invencibility = false;
+    public spawnPosition = { x: 0, y: 0 };
     private lifeCounter = 3;
+
+
 
     private lastEnemy?: Phaser.Physics.Matter.Sprite
 
-    constructor(scene: Scene, obstacles: ObstaclesController) {
+    constructor(scene: Scene, obstacles: ObstaclesController, interactions: InteractionsController) {
         this.scene = scene;
         this.obstacles = obstacles;
+        this.interactions = interactions;
         this.createSprite();
         this.createAnimations();
         this.stateMachine = new StateMachine(this, 'player');
@@ -182,7 +187,6 @@ export default class PlayerController {
     private moveShotOnEnter() {
         this.sprite.play('move_shot');
     }
-
     private moveShotOnUpdate() {
         const speedX = 1.5;
 
@@ -285,7 +289,6 @@ export default class PlayerController {
         this.sprite.setVelocityX(0);
         this.sprite.setIgnoreGravity(true)
     }
-
     private climbOnUpdate(dt) {
         if (this.cursors.up.isDown)
             this.sprite.setVelocityY(-2);
@@ -299,11 +302,9 @@ export default class PlayerController {
         if (jumpTriggered)
             this.stateMachine.setState('jump');
     }
-
     private climbOnExit() {
         this.sprite.setIgnoreGravity(false)
     }
-
 
     private deathOnEnter() {
         this.sprite.play('death');
@@ -433,16 +434,9 @@ export default class PlayerController {
 
     private onSensorCollide({ bodyA, bodyB, pair }) {
 
-        if (bodyB.label == 'ladder') {
-            if (this.cursors.up.isDown && !this.stateMachine.isCurrentState('climb'))
-                this.stateMachine.setState('climb');
-            return;
-        }
+        const hasAnyStageInteraction = this.stageInteractionHandler(bodyB);
 
-        if (bodyB.label.indexOf('camera_trigger') !== -1) {
-            events.emit(bodyB.label);
-            return;
-        }
+        if (hasAnyStageInteraction) return;
 
         if (bodyA === this.sensors.left) {
             this.isTouching.left = true;
@@ -456,8 +450,6 @@ export default class PlayerController {
 
         this.obstaclesHandler(bodyB);
 
-
-
         const gameObject = bodyB.gameObject
         if (!gameObject) return;
 
@@ -470,17 +462,32 @@ export default class PlayerController {
         this.interactiveItemsHandler(gameObject);
     }
 
+    private stageInteractionHandler(body: any) {
+        if (body.label == 'ladder') {
+            if (this.cursors.up.isDown && !this.stateMachine.isCurrentState('climb')) {
+                this.stateMachine.setState('climb');
+            }
+            return true;
+        }
+
+        if (this.interactions.is('camera_trigger', body)) {
+            events.emit(body.label);
+            return true;
+        }
+
+        if (this.interactions.is('new_spawn', body)) {
+            this.spawnPosition = { x: body.x, y: body.y };
+            return true;
+        }
+
+    }
+
     private obstaclesHandler(body: any) {
         if (this.invencibility) {
             if (this.obstacles.is('pit', body)) {
                 this.stateMachine.setState('spike_hit');
                 return
             }
-        }
-
-        if (this.obstacles.is('camera_trigger', body)) {
-            events.emit(body.label);
-            return;
         }
 
         if (this.obstacles.is('spike', body) || this.obstacles.is('pit', body) || this.obstacles.is('lethal', body)) {

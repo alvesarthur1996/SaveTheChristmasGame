@@ -1,6 +1,6 @@
 import PlayerController from "../../controllers/characters/playerController";
 import EnemyController from "../../controllers/enemies/enemyController";
-import ObstaclesController from "../../controllers/obstacles/obsctaclesController";
+import ObstaclesController from "../../controllers/obsctaclesController";
 import { sharedInstance as events } from "../eventCentre";
 
 export default class MadFactoryStage extends Phaser.Scene {
@@ -26,8 +26,9 @@ export default class MadFactoryStage extends Phaser.Scene {
         map.addTilesetImage('megacommando', 'megacommando');
         const objectLayer = map.getObjectLayer('objects');
 
-        const Room_1: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_1', 'megacommando');
+        const Background: Phaser.Tilemaps.TilemapLayer = map.createLayer('background', 'megacommando')?.setVisible(true);
         const Room_1_bg: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_1_bg', 'megacommando');
+        const Room_1: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_1', 'megacommando');
         const Room_2: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_2', 'megacommando')?.setVisible(true);
         const Room_3: Phaser.Tilemaps.TilemapLayer = map.createLayer('room_3', 'megacommando')?.setVisible(false);
 

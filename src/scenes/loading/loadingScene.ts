@@ -1,4 +1,5 @@
 import { GameUtils } from "../../utils/constant";
+import Stages from "../../utils/stages";
 
 export default class LoadingScene extends Phaser.Scene {
     constructor() {
@@ -14,10 +15,8 @@ export default class LoadingScene extends Phaser.Scene {
         this.load.baseURL = "http://localhost:8080/static/"
         this.loadImages();
         this.loadSprites();
-        // this.loadAudios();
-        this.load.tilemapTiledJSON('candy_land', '/maps/candy_land/teste.json');
-        this.load.tilemapTiledJSON('mad_factory', '/maps/mad_factory/mad_factory.json');
-
+        this.loadAudios();
+        // this.load.tilemapTiledJSON('mad_factory', 'maps/mad_factory/mad_factory.json');
     }
 
     loadImages() {
@@ -42,9 +41,9 @@ export default class LoadingScene extends Phaser.Scene {
 
 
     create() {
-        this.add.image(0,0,'loading_img').setScale(0.5).setOrigin(0);
+        this.add.image(0,0,'loading_img');
         // setTimeout(()=>{
-            this.scene.start('MadFactory');
+            this.scene.start(Stages.CandyLand);
         // }, 5000);
     }
 };

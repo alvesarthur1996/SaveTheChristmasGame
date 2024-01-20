@@ -17,16 +17,20 @@ export const GameUtils: any =  {
     },
     Images: [
         {key:'loading_img', path: 'images/loading_img.png'},
-        {key:'tiles_test', path: 'maps/candy_land/tiles_test.png'},
-        {key:'background', path: 'maps/candy_land/scifi_platform_BG1.jpg'},
         {key:'big_health', path: 'sprites/objects/big_life.png'},
         {key:'milk_tank', path: 'sprites/objects/milk_tank.png'},
         {key:'small_health', path: 'sprites/objects/small_life.png'},
         {key:'weapon_energy', path: 'sprites/objects/weapon_energy.png'},
         {key:'megacommando', path: 'maps/mad_factory/megacommando.png'},
+        {key:'other_candy_blocks', path: 'maps/candy_land/other_candy_blocks.png'},
+        {key:'new_candy_options', path: 'maps/candy_land/new_candy_options.png'},
+        {key:'tileset_candy', path: 'maps/candy_land/tileset_candy.png'},
+        {key:'tiles_test', path: 'maps/candy_land/tiles_test.png'},
+        {key:'candies_factory', path: 'maps/candy_land/candies_factory.png'},
+        {key:'candies_props', path: 'maps/candy_land/candies_props.png'},
     ],
     Audios: [
-        // {key:'main_menu', path: '/sounds/menu/main_menu.wav'},
+        {key:'candy_land_stage', path: '/sounds/candy_land_stage.mp3'},
     ],
     Sprites: [
         {

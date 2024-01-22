@@ -52,10 +52,10 @@ export default class GingerMadController {
                 onEnter: this.moveOnEnter,
                 onUpdate: this.moveOnUpdate,
             })
-            .addState('trample', {
-                onEnter: this.trampleOnEnter,
-                onUpdate: this.trampleOnUpdate,
-            })
+            // .addState('trample', {
+            //     onEnter: this.trampleOnEnter,
+            //     onUpdate: this.trampleOnUpdate,
+            // })
             .addState('jump', {
                 onEnter: this.jumpOnEnter,
                 onUpdate: this.jumpOnUpdate,
@@ -294,7 +294,7 @@ export default class GingerMadController {
         if (bodyB.gameObject instanceof BulletShoot && !this.invencibility) {
             let damage = bodyB.gameObject.damage;
             if (bodyB.gameObject.name == this.weakness)
-                damage = damage * 3;
+                damage = damage + 4;
 
             this.stateMachine.setState('damage_taken');
             this.setHealth(this.health - damage);
@@ -369,16 +369,12 @@ export default class GingerMadController {
 
 
         let random = Math.ceil(Math.random() * 80);
-        if (random >= 0 && random < 10)
+        if (random >= 0 && random < 45)
             this.currentAction = 'move';
-        else if (random >= 10 && random < 20)
+        else if (random >= 45 && random <60)
             this.currentAction = 'jump';
-        else if (random >= 20 && random < 30)
-            this.currentAction = 'trample';
-        else if ((random >= 30 && random < 100))
+        else if ((random >= 60 && random < 100))
             this.currentAction = 'shoot';
-        else
-            this.currentAction = 'move';
 
         this.stateMachine.setState(this.currentAction);
     }

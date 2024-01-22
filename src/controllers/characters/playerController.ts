@@ -126,7 +126,7 @@ export default class PlayerController {
 
         this.weaponList.push(Weapons.SnowBuster);
         this.weaponList.push(Weapons.CandyBoomerang);
-        this.changeWeapon(Weapons.CandyBoomerang);
+        this.changeWeapon(Weapons.SnowBuster);
 
 
         // this.changeWeapon(this.weaponList.get(Weapons.SnowBuster));

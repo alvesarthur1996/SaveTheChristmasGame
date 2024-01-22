@@ -61,7 +61,6 @@ export default class MadFactoryStage extends Phaser.Scene {
 
         objectLayer?.objects.forEach(object => {
             const { x = 0, y = 0, name, width = 0, height = 0 } = object;
-            console.log('2')
 
             switch (name) {
                 case 'spawn_zone':

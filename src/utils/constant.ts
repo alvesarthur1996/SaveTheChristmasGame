@@ -42,6 +42,23 @@ export const GameUtils: any =  {
             spritesheet: "met",
             spritesheet_path: "sprites/characters/enemies/met/met",
             config:{frameHeight: 32, frameWidth: 32}
+        },
+        {
+            spritesheet: "gingermad",
+            spritesheet_path: "sprites/characters/bosses/gingermad/gingermad",
+            config:{frameHeight: 32, frameWidth: 32}
         }
     ],
+    Weapons: [
+        {
+            spritesheet: "snow_buster",
+            spritesheet_path: "sprites/weapons/snow_buster/snow_buster",
+            config:{frameHeight: 32, frameWidth: 32}
+        },
+        {
+            spritesheet: "candy_boomerang",
+            spritesheet_path: "sprites/weapons/candy_boomerang/candy_boomerang",
+            config:{frameHeight: 23, frameWidth: 13}
+        }
+    ]
 }

@@ -1,3 +1,5 @@
+import Stages from "../utils/stages";
+
 export default class GameOverScene extends Phaser.Scene {
     constructor() {
         super({ key: 'game-over' });
@@ -14,7 +16,7 @@ export default class GameOverScene extends Phaser.Scene {
         const button = this.add.rectangle((width / 2), (height / 1.5), 150, 80, 0xffffff)
         .setInteractive()
         .on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, ()=>{
-            this.scene.start('TEST')
+            this.scene.start(Stages.CandyLand);
         });
 
         this.add.text(button.x, button.y, 'Play Again', {

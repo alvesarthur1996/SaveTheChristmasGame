@@ -5,4 +5,10 @@ export enum GameEvents {
     UseLifeTank = "UseLifeTank",
 }
 
+export enum HealthChange {
+    SmallHealth = 5,
+    BigHealth = 10,
+    LifeTank = 28
+}
+
 export default GameEvents;

@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser, { Textures } from 'phaser';
 import StateMachine from "../stateMachine";
 import { sharedInstance as events } from '../../scenes/eventCentre';
 import ObstaclesController from '../obsctaclesController';
@@ -6,6 +6,11 @@ import { Bodies } from 'matter';
 import Scene from '../../scenes/scene';
 import GameEvents from '../../utils/events';
 import InteractionsController from '../interactionsController';
+import { Weapons } from '../../utils/weapons';
+import BulletShoot from '../bulletShoot';
+import { callWeaponClassDinamically } from '../../utils/functions';
+import Boss, { BossWeapon } from '../../utils/boss';
+import GingerMadController from './bosses/gingerMadController';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -40,14 +45,18 @@ export default class PlayerController {
 
     private isTouching: TouchingDetection;
     private speedY = 0;
-    private health = 100;
+    private health = 28;
     private invencibility = false;
     public spawnPosition = { x: 0, y: 0 };
     private lifeCounter = 3;
-
-
+    // private weaponList: Map<Weapons, BulletShoot> = new Map();
+    // private currentWeapon!: BulletShoot;
+    private weaponList: Array<Weapons> = [];
+    private currentWeapon!: Weapons;
+    private shoots: Array<BulletShoot> = [];
 
     private lastEnemy?: Phaser.Physics.Matter.Sprite
+    private lastEnemyDamage?: number;
 
     constructor(scene: Scene, obstacles: ObstaclesController, interactions: InteractionsController) {
         this.scene = scene;
@@ -65,6 +74,12 @@ export default class PlayerController {
             jump: Phaser.Input.Keyboard.KeyCodes.K,
             shoot: Phaser.Input.Keyboard.KeyCodes.L,
         });
+
+        let spawnPosition: any = localStorage.getItem('spawnPosition');
+        if (spawnPosition) {
+            spawnPosition = JSON.parse(spawnPosition);
+            this.spawnPosition = { x: spawnPosition.x, y: spawnPosition.y };
+        }
 
         this.stateMachine
             .addState('idle', {
@@ -89,6 +104,11 @@ export default class PlayerController {
                 onUpdate: this.moveShotOnUpdate,
                 onExit: this.moveShotOnExit,
             })
+            .addState('shoot', {
+                onEnter: this.shootOnEnter,
+                // onUpdate: this.shootOnUpdate,
+                onExit: this.shootOnExit,
+            })
             .addState('jump', {
                 onEnter: this.jumpOnEnter,
                 onUpdate: this.jumpOnUpdate,
@@ -104,20 +124,25 @@ export default class PlayerController {
             })
             .setState('idle');
 
-        this.scene.matter.world.on("beforeupdate", this.resetTouching, this);
+        this.weaponList.push(Weapons.SnowBuster);
+        this.weaponList.push(Weapons.CandyBoomerang);
+        this.changeWeapon(Weapons.CandyBoomerang);
 
+
+        // this.changeWeapon(this.weaponList.get(Weapons.SnowBuster));
+        // , new SnowBuster(this.scene.matter.world, this.sprite.x, this.sprite.y, 'snow_buster', {}));
+
+        this.scene.matter.world.on("beforeupdate", this.resetTouching, this);
         scene.matterCollision.addOnCollideStart({
             objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite],
             callback: this.onSensorCollide,
             context: this
         });
-
         scene.matterCollision.addOnCollideActive({
             objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite],
             callback: this.onSensorCollide,
             context: this
         });
-
         this.scene.events.on("update", this.update, this);
         this.scene.events.once("shutdown", this.destroy, this);
         this.scene.events.once("destroy", this.destroy, this);
@@ -131,6 +156,8 @@ export default class PlayerController {
             this.stateMachine.setState('move')
         else if (Phaser.Input.Keyboard.JustDown(this.cursors.jump))
             this.stateMachine.setState('jump');
+        else if (Phaser.Input.Keyboard.JustDown(this.cursors.shoot))
+            this.stateMachine.setState('shoot');
     }
 
     private fallingOnEnter() {
@@ -186,9 +213,14 @@ export default class PlayerController {
 
     private moveShotOnEnter() {
         this.sprite.play('move_shot');
+        const shoot = this.shoots.find(shoot => !shoot.active);
+        if (shoot) {
+            shoot.fire(this.sprite);
+        }
     }
     private moveShotOnUpdate() {
         const speedX = 1.5;
+
 
         if (this.stateMachine.isCurrentState('move_shot') && !this.cursors.shoot.isDown)
             this.stateMachine.setState('move');
@@ -203,6 +235,7 @@ export default class PlayerController {
             this.sprite.setVelocityX(0);
             this.stateMachine.setState('idle');
         }
+
         const jumpTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.jump);
 
         if (jumpTriggered) {
@@ -238,26 +271,40 @@ export default class PlayerController {
             }
     }
 
+    private shootOnEnter() {
+        const shoot = this.shoots.find(shoot => !shoot.active);
+        if (shoot) {
+            shoot.fire(this.sprite);
+            this.stateMachine.setState('idle');
+        }
+    }
+    private shootOnUpdate(dt: number) {
+
+    }
+    private shootOnExit() {
+        // this.stateMachine.setState('idle');
+    }
+
+
     private spikeHitOnEnter() {
         this.stateMachine.setState('idle');
         this.setHealth(0);
     }
 
     private enemyHitOnEnter() {
-        this.stateMachine.setState('idle');
         if (this.invencibility) return;
 
         this.invencibility = true
+        this.stateMachine.setState('idle');
 
         if (this.lastEnemy) {
             if (this.sprite.x < this.lastEnemy.x)
-                this.sprite.setVelocityX(-2.5);
+                this.sprite.setVelocityX(-4.5);
             else
-                this.sprite.setVelocityX(2.5);
+                this.sprite.setVelocityX(4.5);
         }
         this.sprite.setVelocityY(-2)
-
-        this.setHealth(this.health - 10);
+        this.setHealth(this.health - (this.lastEnemyDamage ?? 3));
 
         const startColor = Phaser.Display.Color.ValueToColor(0xffffff)
         const endColor = Phaser.Display.Color.ValueToColor(0x888888)
@@ -309,15 +356,20 @@ export default class PlayerController {
     private deathOnEnter() {
         this.sprite.play('death');
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
-        // events.emit(GameEvents.LifeLoss, -1);
-        this.lifeCounter--;
+
+        events.emit(GameEvents.LifeLoss, -1);
+
         this.scene.time.delayedCall(2000, () => {
             this.scene.cameras.main.fade(250, 0, 0, 0);
             this.scene.cameras.main.once("camerafadeoutcomplete", () => {
-                if (this.lifeCounter < 0)
+                if (this.lifeCounter <= 0) {
+                    this.spawnPosition = { x: 0, y: 0 };
                     this.scene.scene.start("game-over")
-                else
+                    // this.lifeCounter = 3;
+                }
+                else {
                     this.scene.scene.restart()
+                }
             });
         });
 
@@ -326,7 +378,6 @@ export default class PlayerController {
 
     private fallSpeedFactor(dt: number) {
         let currentSpeed = this.speedY + 0.25;
-        console.log("SPEED: ", currentSpeed);
         if (currentSpeed > 8)
             currentSpeed = 8;
         this.speedY = currentSpeed;
@@ -335,7 +386,7 @@ export default class PlayerController {
     }
 
     private setHealth(value: number) {
-        this.health = Phaser.Math.Clamp(value, 0, 100);
+        this.health = Phaser.Math.Clamp(value, 0, 28);
         events.emit('health_changed', this.health)
 
         if (this.health == 0)
@@ -399,7 +450,7 @@ export default class PlayerController {
         this.sprite = this.scene.matter.add.sprite(0, 0, 'santa_claus', 'idle');
 
         const { width: w, height: h } = this.sprite;
-        const mainBody = Bodies.rectangle(0, 0, w * 0.6, h * 0.7, { chamfer: { radius: 1 } });
+        const mainBody = Bodies.rectangle(0, 0, w * 0.6, h * 0.7, { chamfer: { radius: 5 } });
 
         this.sensors = {
             bottom: Bodies.rectangle(0, h * 0.35, w * 0.55, 2, { isSensor: true }),
@@ -431,12 +482,13 @@ export default class PlayerController {
         };
     }
 
-
     private onSensorCollide({ bodyA, bodyB, pair }) {
-
         const hasAnyStageInteraction = this.stageInteractionHandler(bodyB);
-
         if (hasAnyStageInteraction) return;
+
+        if (this.invencibility && (Object.values(Boss).includes(bodyB.gameObject.name) || Object.values(BossWeapon).includes(bodyB.gameObject.name))) {
+            return;
+        }
 
         if (bodyA === this.sensors.left) {
             this.isTouching.left = true;
@@ -458,6 +510,10 @@ export default class PlayerController {
                 this.stateMachine.setState('idle');
             return
         }
+        
+        if (gameObject.getData('type') == 'boss' || Object.keys(Weapons).includes(gameObject.name)) {
+            this.handleBossCollision(gameObject);
+        }
 
         this.interactiveItemsHandler(gameObject);
     }
@@ -476,7 +532,7 @@ export default class PlayerController {
         }
 
         if (this.interactions.is('new_spawn', body)) {
-            this.spawnPosition = { x: body.x, y: body.y };
+            localStorage.setItem("spawnPosition", JSON.stringify(body.position));
             return true;
         }
 
@@ -501,6 +557,7 @@ export default class PlayerController {
         }
     }
 
+
     private interactiveItemsHandler(gameObject: Phaser.Physics.Matter.Sprite) {
         const sprite = gameObject as Phaser.Physics.Matter.Sprite
         const type = sprite.getData('type');
@@ -512,23 +569,52 @@ export default class PlayerController {
                 break;
             case 'small_health':
                 const smallHp: number = sprite.getData('health') ?? 0;
-                this.health = Phaser.Math.Clamp(this.health + smallHp, 0, 100);
+                this.health = Phaser.Math.Clamp(this.health + smallHp, 0, 28);
                 events.emit('health_changed', this.health);
                 sprite.destroy();
                 break;
             case 'big_health':
                 const biglHp: number = sprite.getData('health') ?? 0;
-                this.health = Phaser.Math.Clamp(this.health + biglHp, 0, 100);
+                this.health = Phaser.Math.Clamp(this.health + biglHp, 0, 28);
                 events.emit('health_changed', this.health)
                 sprite.destroy();
                 break;
         }
     }
 
+
+    private handleBossCollision(gameObject: Phaser.Physics.Matter.Sprite) {
+        if (Boss.GingerMad == gameObject.name) {
+            this.lastEnemyDamage = GingerMadController.meleeDamage;
+        }
+        else if (BossWeapon.CandyBoomerang == gameObject.name) {
+            this.lastEnemyDamage = GingerMadController.shootDamage;
+        }
+
+        this.lastEnemy = gameObject;
+        this.stateMachine.setState('enemy_hit');
+    }
+
     private removeCollisionListeners() {
         const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite];
         this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
         this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
+    }
+
+    private changeWeapon(weapon: Weapons) {
+        if (this.weaponList.filter(i => i == weapon).length)
+            this.currentWeapon = weapon;
+
+        this.shoots = [];
+        for (let i = 0; i <= 64; i++) {
+            const weapon = callWeaponClassDinamically(this.currentWeapon, {
+                world: this.scene.matter.world,
+                x: this.sprite.x,
+                y: this.sprite.y,
+                bodyOptions: {}
+            });
+            if (weapon) this.shoots.push(weapon);
+        }
     }
 
     destroy() {

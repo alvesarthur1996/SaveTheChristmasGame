@@ -35,6 +35,6 @@ export default class GameController extends Phaser.Scene {
     }
 
     update(time: number, delta: number): void {
-        console.log(this.lifeCounter);
+        
     }
 };

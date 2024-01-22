@@ -8,7 +8,7 @@ export default class LoadingScene extends Phaser.Scene {
         })
     }
     init() {
-        console.log("Current Scene", this.scene.key);
+        
     }
 
     preload() {
@@ -28,12 +28,16 @@ export default class LoadingScene extends Phaser.Scene {
     loadAudios() {
         GameUtils.Audios.forEach((item: any) => {
             this.load.audio(item.key, item.path);
-            console.log(item);
         });
     }
 
     loadSprites() {
         GameUtils.Sprites.forEach((item: any) => {
+            this.load.spritesheet(item.spritesheet, item.spritesheet_path+'.png', item?.config);
+            this.load.atlas(item.spritesheet+'_atlas', item.spritesheet_path+'.png', item.spritesheet_path+'.json');
+        });
+       
+        GameUtils.Weapons.forEach((item: any) => {
             this.load.spritesheet(item.spritesheet, item.spritesheet_path+'.png', item?.config);
             this.load.atlas(item.spritesheet+'_atlas', item.spritesheet_path+'.png', item.spritesheet_path+'.json');
         });

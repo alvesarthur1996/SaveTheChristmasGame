@@ -10,6 +10,7 @@ export default class StateMachine {
     private name: string;
     private states = new Map<string, StateConfig>()
 
+    private lastState?: StateConfig;
     private currentState?: StateConfig;
     private isSwitchingState = false;
     private stateQueue: string[] = [];
@@ -22,6 +23,10 @@ export default class StateMachine {
     isCurrentState(name: string) {
         if (!this.currentState) return false;
         return this.currentState.name === name;
+    }
+
+    getLastState() {
+        return this.lastState;
     }
 
     addState(name: string, config?: StateConfig) {
@@ -47,6 +52,7 @@ export default class StateMachine {
         if (this.currentState && this.currentState.onExit)
             this.currentState.onExit()
 
+        this.lastState = this.currentState;
         this.currentState = this.states.get(name);
 
 
@@ -59,13 +65,13 @@ export default class StateMachine {
     }
 
     update(dt: number) {
-
+        
         if (this.stateQueue.length) {
             const name = this.stateQueue.shift()!;
+            this.lastState = this.currentState;
             this.setState(name)
             return
         }
-
         if (!this.currentState) return;
 
         if (this.currentState.onUpdate)

@@ -1,0 +1,83 @@
+{
+	"textures": [
+		{
+			"image": "snow_buster.png",
+			"format": "RGBA8888",
+			"size": {
+				"w": 93,
+				"h": 30
+			},
+			"scale": 1,
+			"frames": [
+				{
+					"filename": "snowball_1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 3,
+						"w": 29,
+						"h": 28
+					},
+					"frame": {
+						"x": 1,
+						"y": 1,
+						"w": 29,
+						"h": 28
+					}
+				},
+				{
+					"filename": "snowball_2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 3,
+						"w": 29,
+						"h": 28
+					},
+					"frame": {
+						"x": 32,
+						"y": 1,
+						"w": 29,
+						"h": 28
+					}
+				},
+				{
+					"filename": "snowball_3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 3,
+						"w": 29,
+						"h": 28
+					},
+					"frame": {
+						"x": 63,
+						"y": 1,
+						"w": 29,
+						"h": 28
+					}
+				}
+			]
+		}
+	],
+	"meta": {
+		"app": "https://www.codeandweb.com/texturepacker",
+		"version": "3.0",
+		"smartupdate": "$TexturePacker:SmartUpdate:63dc049e96fd1606aa41aecc2b949310:93c2a670e86f040e4813c9e17bb8eb97:a19cf808b09139e22b9e051bbe5d2e31$"
+	}
+}

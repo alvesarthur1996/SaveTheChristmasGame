@@ -7,6 +7,7 @@ export default class UI extends Phaser.Scene {
     private milkTanks = 0;
     private lifeCounter = GameController.lifeCounter;
     private graphics!: Phaser.GameObjects.Graphics;
+    private boss_graphics!: Phaser.GameObjects.Graphics;
     private GameController: GameController
 
     constructor() {
@@ -20,13 +21,19 @@ export default class UI extends Phaser.Scene {
 
     create() {
         this.graphics = this.add.graphics();
-        this.setHealthBar(100)
+        this.boss_graphics = this.add.graphics();
+        this.setHealthBar(28)
 
+        
         this.milkTankLabel = this.add.text(10, 10, 'Milk Tank: 0', {
             fontSize: '32px'
         })
         events.on('milk_tank_collected', this.milkTankCollected, this);
         events.on('health_changed', this.healthChanged, this);
+        
+        events.on('boss_arrived', this.setBossBar, this);
+        events.on('boss_health_changed', this.setBossBar, this);
+
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             events.off('milk_tank_collected', this.milkTankCollected, this);
@@ -36,7 +43,7 @@ export default class UI extends Phaser.Scene {
 
     private setHealthBar(value: number) {
         const height = 150;
-        const currentLife = Phaser.Math.Clamp(value, 0, 100) / 100;
+        const currentLife = Phaser.Math.Clamp(value, 0, 28) / 28;
         const offsetLife = 200 - (height * (currentLife));
 
         this.graphics.clear();
@@ -55,6 +62,20 @@ export default class UI extends Phaser.Scene {
     private milkTankCollected() {
         this.milkTanks++;
         this.milkTankLabel.text = `Milk Tank: ${this.milkTanks}`
+    }
+
+    private setBossBar(value: number) {
+        const height = 150;
+        const currentLife = Phaser.Math.Clamp(value, 0, 28) / 28;
+        const offsetLife = 200 - (height * (currentLife));
+
+        this.boss_graphics.clear();
+        this.boss_graphics.fillStyle(0x9c9c9c);
+        this.boss_graphics.fillRect((this.scale.width - 40), 50, 30, height)
+        if (currentLife > 0) {
+            this.boss_graphics.fillStyle(0xff5555);
+            this.boss_graphics.fillRect((this.scale.width - 40), offsetLife, 30, (height * currentLife));
+        }
     }
 
     update(time: number, delta: number): void {

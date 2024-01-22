@@ -6,9 +6,12 @@ import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import { GameUtils } from "../../utils/constant";
 import InteractionsController from "../../controllers/interactionsController";
+import GingerMad from "../../controllers/characters/bosses/gingerMadController";
+import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
 
 export default class CandyLandStage extends Phaser.Scene {
     private playerController?: PlayerController;
+    private bossController;
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;
     private enemies!: Array<EnemyController>;
@@ -84,13 +87,15 @@ export default class CandyLandStage extends Phaser.Scene {
             switch (name) {
                 case 'spawn_zone':
                     this.playerController = new PlayerController(this, this.obstacles, this.interactions);
-                    this.playerController.spawnPosition = { x, y };
+                    if (this.playerController.spawnPosition.x == 0 && this.playerController.spawnPosition.y == 0)
+                        this.playerController.spawnPosition = { x, y };
+
                     this.playerController.setSpritePosition(this.playerController.spawnPosition.x, this.playerController.spawnPosition.y);
                     this.cameras.main.startFollow(this.playerController.getSprite(), true, 0.5, 0.5);
                     this.cameras.main.zoom = 2.1
                     break;
                 case 'spawn_zone_2':
-                case 'boss_spawm_zone':
+                case 'boss_spawn':
                     const new_spawn: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
                         isSensor: true,
@@ -149,6 +154,20 @@ export default class CandyLandStage extends Phaser.Scene {
                         events.off('room_5_camera_trigger');
                     });
                     break;
+                case 'room_6_trigger':
+                    const trigger_cam_6: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                        label: 'room_6_camera_trigger'
+                    });
+                    this.interactions.add('camera_trigger', trigger_cam_6);
+                    events.once('room_6_camera_trigger', () => {
+                        this.stage.room_6!.setVisible(true);
+                        this.cameras.main.setBounds(this.room_cameras.room_6.x, this.room_cameras.room_6.y, this.room_cameras.room_6.width, this.room_cameras.room_6.height);
+                        setTimeout(() => { trigger_cam_6.isSensor = false; }, 500);
+                        events.off('room_6_camera_trigger');
+                    });
+                    break;
                 case 'boss_room':
                     const trigger_cam_boss: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
@@ -161,6 +180,13 @@ export default class CandyLandStage extends Phaser.Scene {
                         this.cameras.main.setBounds(this.room_cameras.boss.x, this.room_cameras.boss.y, this.room_cameras.boss.width, this.room_cameras.boss.height);
                         setTimeout(() => { trigger_cam_boss.isSensor = false; }, 500);
                         events.off('room_boss_camera_trigger');
+
+                        setTimeout(()=>{
+                            let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
+                            this.bossController = gingerMad;
+                            this.bossController.setSpritePosition(x + 220, y);
+                            events.emit('boss_arrived', 28)
+                        },2000);
                     });
                     break;
                 case 'ladder':
@@ -225,8 +251,14 @@ export default class CandyLandStage extends Phaser.Scene {
             width: 31 * this.tile_size,
             height: 21 * this.tile_size
         };
+        this.room_cameras.room_6 = {
+            x: 15 * this.tile_size,
+            y: 35 * this.tile_size,
+            width: 97 * this.tile_size,
+            height: 25 * this.tile_size
+        };
         this.room_cameras.boss = {
-            x: 90 * this.tile_size,
+            x: 88 * this.tile_size,
             y: 40 * this.tile_size,
             width: 22 * this.tile_size,
             height: 16 * this.tile_size
@@ -235,5 +267,6 @@ export default class CandyLandStage extends Phaser.Scene {
 
     update(time: number, delta: number): void {
         this.playerController?.update(delta);
+        this.bossController?.update(time, delta);
     }
 };

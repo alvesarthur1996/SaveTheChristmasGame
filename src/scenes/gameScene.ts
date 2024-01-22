@@ -2,6 +2,7 @@ import PlayerController, { Keys } from "../controllers/characters/playerControll
 import ObstaclesController from "../controllers/obsctaclesController";
 import MetController from "../controllers/enemies/metController";
 import EnemyController from "../controllers/enemies/enemyController";
+import { HealthChange } from "../utils/events";
 
 export default class GameScene extends Phaser.Scene {
     private playerController?: PlayerController;
@@ -59,7 +60,7 @@ export default class GameScene extends Phaser.Scene {
                         isSensor: true
                     });
                     small_health.setData('type', 'small_health');
-                    small_health.setData('health', 10);
+                    small_health.setData('health', HealthChange.SmallHealth);
                     break;
                 case 'big_health':
                     const big_health = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'big_health', undefined, {
@@ -67,7 +68,7 @@ export default class GameScene extends Phaser.Scene {
                         isSensor: true
                     });
                     big_health.setData('type', 'big_health');
-                    big_health.setData('health', 50);
+                    big_health.setData('health', HealthChange.BigHealth);
                     break;
                 case 'milk_tank':
                     const milk_tank = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'milk_tank', undefined, {

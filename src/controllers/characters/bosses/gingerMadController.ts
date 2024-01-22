@@ -358,7 +358,7 @@ export default class GingerMadController {
 
         this.actionTime += delta;
 
-        if (this.actionTime >= 1500)
+        if (this.actionTime >= 2000)
             this.actionTime = 0;
         if (this.actionTime > 0) return;
 
@@ -369,13 +369,16 @@ export default class GingerMadController {
 
 
         let random = Math.ceil(Math.random() * 80);
-        if (random >= 0 && random < 45)
+        if (random >= 0 && random < 45) {
             this.currentAction = 'move';
-        else if (random >= 45 && random <60)
-            this.currentAction = 'jump';
-        else if ((random >= 60 && random < 100))
+        } else if (random >= 45 && random < 60) {
+            if (this.currentAction == 'jump')
+                this.currentAction = 'shoot';
+            else
+                this.currentAction = 'jump';
+        } else if ((random >= 60 && random < 100)) {
             this.currentAction = 'shoot';
-
+        }
         this.stateMachine.setState(this.currentAction);
     }
 

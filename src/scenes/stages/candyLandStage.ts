@@ -6,12 +6,13 @@ import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import { GameUtils } from "../../utils/constant";
 import InteractionsController from "../../controllers/interactionsController";
-import GingerMad from "../../controllers/characters/bosses/gingerMadController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
+import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
+import { HealthChange } from "../../utils/events";
 
 export default class CandyLandStage extends Phaser.Scene {
     private playerController?: PlayerController;
-    private bossController;
+    private bossController: any;
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;
     private enemies!: Array<EnemyController>;
@@ -39,9 +40,10 @@ export default class CandyLandStage extends Phaser.Scene {
             const map = this.mountMap();
             const objectLayer: Tilemaps.ObjectLayer | null = map.getObjectLayer('objects');
 
+            map.createLayer('background', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
             this.stage.room_1 = map.createLayer('room_1', ['tileset_candy', 'other_candy_blocks', 'tiles_test'])?.setVisible(true);
-            this.stage.room_2 = map.createLayer('room_2', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(false);
-            this.stage.room_3 = map.createLayer('room_3', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(false);
+            this.stage.room_2 = map.createLayer('room_2', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
+            this.stage.room_3 = map.createLayer('room_3', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
             this.stage.room_4 = map.createLayer('room_4', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options']);
             this.stage.room_5 = map.createLayer('room_5', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
             this.stage.room_6 = map.createLayer('room_6', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
@@ -66,6 +68,10 @@ export default class CandyLandStage extends Phaser.Scene {
             this.matter.world.convertTilemapLayer(this.stage.room_5);
             this.matter.world.convertTilemapLayer(this.stage.room_6);
             this.matter.world.convertTilemapLayer(this.stage.boss);
+
+            this.events.once('shutdown', () => {
+                this.bossController = undefined;
+              });
 
         } catch (err) {
             console.log("ERROR: ", err)
@@ -180,14 +186,45 @@ export default class CandyLandStage extends Phaser.Scene {
                         this.cameras.main.setBounds(this.room_cameras.boss.x, this.room_cameras.boss.y, this.room_cameras.boss.width, this.room_cameras.boss.height);
                         setTimeout(() => { trigger_cam_boss.isSensor = false; }, 500);
                         events.off('room_boss_camera_trigger');
+                        this.stage.room_1.setVisible(false);
+                        this.stage.room_2.setVisible(false);
+                        this.stage.room_3.setVisible(false);
+                        this.stage.room_4.setVisible(false);
+                        this.stage.room_6.setVisible(false);
 
-                        setTimeout(()=>{
+                        setTimeout(() => {
+                            if(this.bossController) return;
                             let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
+                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
-                            this.bossController.setSpritePosition(x + 220, y);
+                            this.bossController.setSpritePosition(x + 220, y + 50);
                             events.emit('boss_arrived', 28)
-                        },2000);
+                            console.log("Boss activation");
+                        }, 2000);
                     });
+                    break;
+                case 'small_health':
+                    const small_health = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'small_health', undefined, {
+                        isStatic: true,
+                        isSensor: true
+                    });
+                    small_health.setData('type', 'small_health');
+                    small_health.setData('health', HealthChange.SmallHealth);
+                    break;
+                case 'big_health':
+                    const big_health = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'big_health', undefined, {
+                        isStatic: true,
+                        isSensor: true
+                    });
+                    big_health.setData('type', 'big_health');
+                    big_health.setData('health', HealthChange.BigHealth);
+                    break;
+                case 'life_tank':
+                    const life_tank = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'life_tank', undefined, {
+                        isStatic: true,
+                        isSensor: true
+                    });
+                    life_tank.setData('type', 'life_tank');
                     break;
                 case 'ladder':
                     this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {

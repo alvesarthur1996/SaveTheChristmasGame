@@ -268,10 +268,10 @@ export default class RudolphTheRedController implements IBoss {
             if (bodyB.gameObject instanceof IceBlock) {
                 if (bodyA === this.sensors.left) {
                     this.isTouching.left = true;
-                    if (pair.separation > 0.5 && this.sprite.x) this.sprite.x += pair.separation - 0.5;
+                    if (pair && pair.separation > 0.5 && this.sprite.x) this.sprite.x += pair.separation - 0.5;
                 } else if (bodyA === this.sensors.right) {
                     this.isTouching.right = true;
-                    if (pair.separation > 0.5 && this.sprite.x) this.sprite.x -= pair.separation - 0.5;
+                    if (pair && pair.separation > 0.5 && this.sprite.x) this.sprite.x -= pair.separation - 0.5;
                 }
             }
 

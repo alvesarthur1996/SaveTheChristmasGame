@@ -33,6 +33,7 @@ export default class CandyLandStage extends Phaser.Scene {
     preload() {
         this.load.baseURL = 'http://localhost:8080/static/'
         this.load.tilemapTiledJSON('candy_land', 'maps/candy_land/candy_land.json');
+        this.load.image('bg', 'maps/candy_land/background.jpeg')
     }
 
     create() {
@@ -194,8 +195,8 @@ export default class CandyLandStage extends Phaser.Scene {
 
                         setTimeout(() => {
                             if(this.bossController) return;
-                            let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
-                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
+                            // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
+                            let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
                             events.emit('boss_arrived', 28)

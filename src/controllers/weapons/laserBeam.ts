@@ -16,7 +16,7 @@ export default class LaserBeam extends BulletShoot {
         this.setFixedRotation()
         this.setName(Weapons.LaserBeam);
         this.damage = 2;
-        this.speed = 5.6;
+        this.speed = 5.1;
 
         this.anims.create({
             key: 'shoot',

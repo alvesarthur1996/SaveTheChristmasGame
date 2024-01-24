@@ -28,6 +28,7 @@ export const GameUtils: any =  {
         {key:'tiles_test', path: 'maps/candy_land/tiles_test.png'},
         {key:'candies_factory', path: 'maps/candy_land/candies_factory.png'},
         {key:'candies_props', path: 'maps/candy_land/candies_props.png'},
+        {key:'game_title', path: 'images/game_title.jpeg'},
     ],
     Audios: [
         {key:'candy_land_stage', path: '/sounds/candy_land_stage.mp3'},

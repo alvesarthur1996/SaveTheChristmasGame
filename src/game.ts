@@ -8,13 +8,14 @@ import { PhaserMatterCollisionPlugin } from 'phaser-matter-collision-plugin'
 import GameController from './controllers/gameController';
 import MadFactoryStage from './scenes/stages/madFactoryStage';
 import CandyLandStage from './scenes/stages/candyLandStage';
+import GameTitle from './scenes/gameTitle';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
 
 // const ratio = Math.max(window.innerWidth / window.innerHeight, window.innerHeight / window.innerWidth)
-const DEFAULT_HEIGHT = 600 // any height you want
 const DEFAULT_WIDTH = 800
+const DEFAULT_HEIGHT = 600 // any height you want
 
 
 const pluginConfig = {
@@ -39,6 +40,10 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   mode: Phaser.Scale.CENTER_HORIZONTALLY,
   autoCenter: Phaser.Scale.CENTER_BOTH,
+  input: {
+    gamepad: true,
+    keyboard: true
+  },
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
   fps: {
@@ -46,6 +51,7 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [
     LoadingScene,
+    GameTitle,
     CandyLandStage,
     GameController,
     UI,

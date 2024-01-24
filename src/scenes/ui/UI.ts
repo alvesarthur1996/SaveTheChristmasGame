@@ -15,7 +15,7 @@ export default class UI extends Phaser.Scene {
     }
 
     init() {
-        this.milkTanks = GameController.lifeTanks;
+        this.milkTanks = 0;
         this.GameController = new GameController();
     }
 
@@ -25,10 +25,10 @@ export default class UI extends Phaser.Scene {
         this.setHealthBar(28)
 
         
-        this.milkTankLabel = this.add.text(10, 10, 'Milk Tank: 0', {
+        this.milkTankLabel = this.add.text(10, 10, 'Life Tank: 0', {
             fontSize: '32px'
         })
-        events.on('milk_tank_collected', this.milkTankCollected, this);
+        events.on('life_tank_collected', this.milkTankCollected, this);
         events.on('health_changed', this.healthChanged, this);
         
         events.on('boss_arrived', this.setBossBar, this);
@@ -36,7 +36,7 @@ export default class UI extends Phaser.Scene {
 
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            events.off('milk_tank_collected', this.milkTankCollected, this);
+            events.off('life_tank_collected', this.milkTankCollected, this);
         })
     }
 
@@ -61,7 +61,7 @@ export default class UI extends Phaser.Scene {
 
     private milkTankCollected() {
         this.milkTanks++;
-        this.milkTankLabel.text = `Milk Tank: ${this.milkTanks}`
+        this.milkTankLabel.text = `Life Tank: ${this.milkTanks}`
     }
 
     private setBossBar(value: number) {

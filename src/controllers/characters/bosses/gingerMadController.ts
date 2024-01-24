@@ -1,3 +1,4 @@
+import IBoss from "../../../contracts/boss";
 import { sharedInstance as events } from "../../../scenes/eventCentre";
 import Boss, { BossWeapon } from "../../../utils/boss";
 import { callWeaponClassDinamically } from "../../../utils/functions";
@@ -6,12 +7,11 @@ import BulletShoot from "../../bulletShoot";
 import StateMachine from "../../stateMachine";
 import { CollisionSensors, TouchingDetection } from "../playerController";
 
-export default class GingerMadController {
+export default class GingerMadController implements IBoss{
     private stateMachine: StateMachine;
     private scene: Phaser.Scene
     private player: Phaser.Physics.Matter.Sprite;
     private sprite!: Phaser.Physics.Matter.Sprite;
-    private speedY = 0;
     private baseHealth = 28;
     private health = this.baseHealth;
     private invencibility = false;
@@ -19,7 +19,7 @@ export default class GingerMadController {
     private isTouching!: TouchingDetection;
     public spawnPosition = { x: 0, y: 0 };
     public static shootDamage = 5;
-    public static meleeDamage = 4;
+    public static meleeDamage = 2;
     private actionTime = 0;
     private currentAction!: string;
     private destroyed = false;
@@ -35,7 +35,7 @@ export default class GingerMadController {
 
 
     constructor(scene: Phaser.Scene, player: Phaser.Physics.Matter.Sprite) {
-        // super(scene);
+        // super(scene, player);
         this.player = player;
         this.scene = scene;
         this.stateMachine = new StateMachine(this, Boss.GingerMad)
@@ -97,7 +97,6 @@ export default class GingerMadController {
     private idleOnEnter() {
         this.sprite.play('idle');
     }
-
     private jumpOnEnter() {
         this.sprite.setFrame('jump');
         this.sprite.setVelocityY(-7);
@@ -130,9 +129,6 @@ export default class GingerMadController {
     private moveOnEnter() {
         this.sprite.play('move');
     }
-    private trampleOnEnter() {
-        this.sprite.play('move');
-    }
     private moveOnUpdate() {
         this.sprite.flipX ? this.sprite.setVelocityX(-2) : this.sprite.setVelocityX(2);
         if (this.isTouching.left || this.isTouching.right) {
@@ -140,14 +136,6 @@ export default class GingerMadController {
             this.stateMachine.setState('idle');
         }
     }
-    private trampleOnUpdate() {
-        this.sprite.flipX ? this.sprite.setVelocityX(-5) : this.sprite.setVelocityX(5);
-        if (this.isTouching.left || this.isTouching.right) {
-            this.sprite.flipX = !this.sprite.flipX;
-            this.stateMachine.setState('idle');
-        }
-    }
-
     private damageTakenOnEnter() {
         this.invencibility = true
         this.stateMachine.setState(this.currentAction);
@@ -175,7 +163,6 @@ export default class GingerMadController {
             onComplete: () => { this.invencibility = false }
         });
     }
-
     private deathOnEnter() {
 
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
@@ -224,7 +211,6 @@ export default class GingerMadController {
             repeat: -1
         });
     }
-
     private createSprite() {
         const { Body, Bodies } = Phaser.Physics.Matter.Matter; // Native Matter modules
 
@@ -261,7 +247,6 @@ export default class GingerMadController {
     public setSpritePosition(x: number, y: number): void {
         this.sprite.setPosition(x, y);
     }
-
     private changeWeapon(weapon: BossWeapon) {
         if (this.weaponList.filter(i => i == weapon).length)
             this.currentWeapon = weapon;
@@ -277,19 +262,7 @@ export default class GingerMadController {
             if (weapon) this.shoots.push(weapon);
         }
     }
-
-
-    private bossFight() {
-        let index = Math.ceil(Math.random() * 10);
-
-        switch (index) {
-            case 1:
-                this.stateMachine.setState('move');
-        }
-
-    }
-
-    private onSensorCollide({ bodyA, bodyB, pair }) {
+    protected onSensorCollide({ bodyA, bodyB, pair }) {
 
         if (bodyB.gameObject instanceof BulletShoot && !this.invencibility) {
             let damage = bodyB.gameObject.damage;
@@ -317,15 +290,13 @@ export default class GingerMadController {
             return;
         }
     }
-
-    private setHealth(value: number) {
+    protected setHealth(value: number) {
         this.health = Phaser.Math.Clamp(value, 0, this.baseHealth);
         events.emit('boss_health_changed', this.health);
         if (this.health == 0)
             this.stateMachine.setState('death');
     }
-
-    private resetTouching() {
+    protected resetTouching() {
         this.isTouching = {
             ground: false,
             left: false,
@@ -333,27 +304,12 @@ export default class GingerMadController {
         };
     }
 
-    private removeCollisionListeners() {
+    protected removeCollisionListeners() {
         const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite];
         this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
         this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
     }
-
-    destroy() {
-        this.destroyed = true;
-        this.scene.events.off("update", this.update, this);
-        this.scene.events.off("shutdown", this.destroy, this);
-        this.scene.events.off("destroy", this.destroy, this);
-        if (this.scene.matter.world) {
-            this.scene.matter.world.off("beforeupdate", this.resetTouching, this);
-        }
-
-        this.removeCollisionListeners();
-
-        this.sprite.destroy();
-    }
-
-    private watchPlayer(delta: number) {
+    private fightMode(delta: number) {
         if (!this.player) return;
 
         this.actionTime += delta;
@@ -382,10 +338,24 @@ export default class GingerMadController {
         this.stateMachine.setState(this.currentAction);
     }
 
+
+    destroy() {
+        this.destroyed = true;
+        this.scene.events.off("update", this.update, this);
+        this.scene.events.off("shutdown", this.destroy, this);
+        this.scene.events.off("destroy", this.destroy, this);
+        if (this.scene.matter.world) {
+            this.scene.matter.world.off("beforeupdate", this.resetTouching, this);
+        }
+
+        this.removeCollisionListeners();
+
+        this.sprite.destroy();
+    }
     update(time: number, dt: number) {
         if (this.destroyed) return;
         this.stateMachine.update(dt);
         if (this.player)
-            this.watchPlayer(dt);
+            this.fightMode(dt);
     }
 }

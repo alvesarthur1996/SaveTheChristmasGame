@@ -11,6 +11,7 @@ import BulletShoot from '../bulletShoot';
 import { callWeaponClassDinamically } from '../../utils/functions';
 import Boss, { BossWeapon } from '../../utils/boss';
 import GingerMadController from './bosses/gingerMadController';
+import RudolphTheRedController from './bosses/rudolphTheRedController';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -18,7 +19,8 @@ export type Keys = {
     left: Phaser.Input.Keyboard.Key,
     right: Phaser.Input.Keyboard.Key,
     jump: Phaser.Input.Keyboard.Key,
-    shoot: Phaser.Input.Keyboard.Key
+    shoot: Phaser.Input.Keyboard.Key,
+    change_weapon: Phaser.Input.Keyboard.Key,
 };
 
 export type TouchingDetection = {
@@ -40,7 +42,7 @@ export default class PlayerController {
     private obstacles: ObstaclesController;
     private interactions: InteractionsController;
     private stateMachine: StateMachine;
-    private cursors!: Keys
+    private cursors!: {}
     private destroyed = false;
 
     private isTouching: TouchingDetection;
@@ -73,6 +75,7 @@ export default class PlayerController {
             down: Phaser.Input.Keyboard.KeyCodes.S,
             jump: Phaser.Input.Keyboard.KeyCodes.K,
             shoot: Phaser.Input.Keyboard.KeyCodes.L,
+            change_weapon: Phaser.Input.Keyboard.KeyCodes.P,
         });
 
         let spawnPosition: any = localStorage.getItem('spawnPosition');
@@ -126,7 +129,9 @@ export default class PlayerController {
 
         this.weaponList.push(Weapons.SnowBuster);
         this.weaponList.push(Weapons.CandyBoomerang);
-        this.changeWeapon(Weapons.SnowBuster);
+        this.weaponList.push(Weapons.LaserBeam);
+        this.weaponList.push(Weapons.IceBlock);
+        this.changeWeapon(Weapons.IceBlock);
 
 
         // this.changeWeapon(this.weaponList.get(Weapons.SnowBuster));
@@ -152,12 +157,16 @@ export default class PlayerController {
         this.sprite.play('idle');
     }
     private idleOnUpdate() {
+        const velocity = this.sprite.getVelocity();
+
         if (this.cursors.left.isDown || this.cursors.right.isDown)
             this.stateMachine.setState('move')
         else if (Phaser.Input.Keyboard.JustDown(this.cursors.jump))
             this.stateMachine.setState('jump');
         else if (Phaser.Input.Keyboard.JustDown(this.cursors.shoot))
             this.stateMachine.setState('shoot');
+        else if (velocity.y >= 1.2)
+            this.stateMachine.setState('falling');
     }
 
     private fallingOnEnter() {
@@ -251,8 +260,8 @@ export default class PlayerController {
     private jumpOnEnter() {
         if (!this.isTouching.ground) return;
         this.sprite.setFrame('jump');
-        this.sprite.setVelocityY(-5);
-        this.speedY = -5;
+        this.sprite.setVelocityY(-5.1);
+        this.speedY = -5.1;
     }
     private jumpOnUpdate(dt: number) {
         const speedX = 1.5;
@@ -469,6 +478,7 @@ export default class PlayerController {
 
         this.sprite
             .setExistingBody(compoundBody)
+            .setName('player')
             .setDepth(2)
             .setBounce(0)
             .setFixedRotation();
@@ -510,9 +520,15 @@ export default class PlayerController {
                 this.stateMachine.setState('idle');
             return
         }
-        
-        if (gameObject.getData('type') == 'boss' || Object.keys(Weapons).includes(gameObject.name)) {
+
+        if (gameObject.getData('type') == 'boss' || Object.keys(BossWeapon).includes(gameObject.name)) {
             this.handleBossCollision(gameObject);
+        }
+
+        if (gameObject.name == Weapons.IceBlock) {
+            if ((this.stateMachine.isCurrentState('jump') || this.stateMachine.isCurrentState('falling')))
+                this.stateMachine.setState('idle');
+            return;
         }
 
         this.interactiveItemsHandler(gameObject);
@@ -563,8 +579,8 @@ export default class PlayerController {
         const type = sprite.getData('type');
 
         switch (type) {
-            case 'milk_tank':
-                events.emit('milk_tank_collected');
+            case 'life_tank':
+                events.emit('life_tank_collected');
                 sprite.destroy();
                 break;
             case 'small_health':
@@ -590,6 +606,13 @@ export default class PlayerController {
         else if (BossWeapon.CandyBoomerang == gameObject.name) {
             this.lastEnemyDamage = GingerMadController.shootDamage;
         }
+        else if (Boss.RudolphTheRed == gameObject.name) {
+            this.lastEnemyDamage = RudolphTheRedController.meleeDamage;
+            this.sprite.setVelocityY(-8);
+        }
+        else if (BossWeapon.CandyBoomerang == gameObject.name) {
+            this.lastEnemyDamage = RudolphTheRedController.shootDamage;
+        }
 
         this.lastEnemy = gameObject;
         this.stateMachine.setState('enemy_hit');
@@ -602,10 +625,12 @@ export default class PlayerController {
     }
 
     private changeWeapon(weapon: Weapons) {
-        if (this.weaponList.filter(i => i == weapon).length)
-            this.currentWeapon = weapon;
+        // if (this.weaponList.filter(i => i == weapon).length)
+        this.currentWeapon = weapon;
 
+        this.shoots.forEach(item => item.destroy());
         this.shoots = [];
+
         for (let i = 0; i <= 64; i++) {
             const weapon = callWeaponClassDinamically(this.currentWeapon, {
                 world: this.scene.matter.world,
@@ -636,6 +661,13 @@ export default class PlayerController {
     update(dt: number) {
         if (this.destroyed) return;
         this.stateMachine.update(dt);
+
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.change_weapon)) {
+            const next: Weapons = this.weaponList.shift();
+            this.weaponList.push(this.currentWeapon);
+            this.changeWeapon(next);
+        }
+
     }
 
     public setSpritePosition(x: number, y: number): void {

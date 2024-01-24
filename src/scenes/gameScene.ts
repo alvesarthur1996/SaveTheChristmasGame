@@ -70,12 +70,12 @@ export default class GameScene extends Phaser.Scene {
                     big_health.setData('type', 'big_health');
                     big_health.setData('health', HealthChange.BigHealth);
                     break;
-                case 'milk_tank':
-                    const milk_tank = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'milk_tank', undefined, {
+                case 'life_tank':
+                    const life_tank = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'life_tank', undefined, {
                         isStatic: true,
                         isSensor: true
                     });
-                    milk_tank.setData('type', 'milk_tank');
+                    life_tank.setData('type', 'life_tank');
                     break;
                 case 'spike':
                     const spike = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {

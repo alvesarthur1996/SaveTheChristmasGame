@@ -1,5 +1,7 @@
 import BulletShoot from "../controllers/bulletShoot";
 import CandyBoomerang from "../controllers/weapons/candyBoomerang";
+import IceBlock from "../controllers/weapons/iceBlock";
+import LaserBeam from "../controllers/weapons/laserBeam";
 import SnowBuster from "../controllers/weapons/snowBuster"
 import { BossWeapon } from "./boss";
 import { Weapons, WeaponsAtlas } from "./weapons"
@@ -18,5 +20,9 @@ export function callWeaponClassDinamically(classname: Weapons|BossWeapon, data: 
             return new SnowBuster(data.world, data.x, data.y, WeaponsAtlas.SnowBuster, data.bodyOptions);
         case Weapons.CandyBoomerang:
             return new CandyBoomerang(data.world, data.x, data.y, WeaponsAtlas.CandyBoomerang, data.bodyOptions);
+        case Weapons.LaserBeam:
+            return new LaserBeam(data.world, data.x, data.y, WeaponsAtlas.LaserBeam, data.bodyOptions);
+        case Weapons.IceBlock:
+            return new IceBlock(data.world, data.x, data.y, WeaponsAtlas.IceBlock, data.bodyOptions);
     }
 }

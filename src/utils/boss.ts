@@ -1,10 +1,17 @@
 enum Boss {
     GingerMad = 'GingerMad',
-    RudolphRedish = 'RudolphRedish',
+    RudolphTheRed = 'RudolphTheRed',
 }
 
 export enum BossWeapon {
-    CandyBoomerang= 'CandyBoomerang'
+    CandyBoomerang= 'CandyBoomerang',
+    LaserBeam = 'LaserBeam'
+}
+
+
+export enum BossAtlas {
+    GingerMad = 'gingermad_atlas',
+    RudolphTheRed = 'rudolph_the_red_atlas',
 }
 
 export default Boss;

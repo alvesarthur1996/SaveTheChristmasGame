@@ -459,7 +459,7 @@ export default class PlayerController {
         this.sprite = this.scene.matter.add.sprite(0, 0, 'santa_claus', 'idle');
 
         const { width: w, height: h } = this.sprite;
-        const mainBody = Bodies.rectangle(0, 0, w * 0.6, h * 0.7, { chamfer: { radius: 5 } });
+        const mainBody = Bodies.rectangle(0, 0, w * 0.6, h * 0.7, { chamfer: { radius: 1 } });
 
         this.sensors = {
             bottom: Bodies.rectangle(0, h * 0.35, w * 0.55, 2, { isSensor: true }),
@@ -481,6 +481,7 @@ export default class PlayerController {
             .setName('player')
             .setDepth(2)
             .setBounce(0)
+            .setFriction(1)
             .setFixedRotation();
     }
 

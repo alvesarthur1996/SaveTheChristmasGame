@@ -4,6 +4,12 @@ export enum Stages {
     SelectStage = 'SelectStage',
     MainMenu = 'MainMenu',
     OptionsMenu = 'OptionsMenu',
+    LoadingStage = 'LoadingStage'
+}
+
+export enum BossNames {
+    CandyLand = "GingerMad",
+    MadFactory = "Rudolph \n the Red",
 }
 
 export default Stages

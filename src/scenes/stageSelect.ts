@@ -1,5 +1,5 @@
 import Boss from "../utils/boss";
-import Stages from "../utils/stages";
+import Stages, { BossNames } from "../utils/stages";
 
 export default class StageSelect extends Phaser.Scene {
     private buttons: Phaser.GameObjects.Text[] = [];
@@ -62,15 +62,21 @@ export default class StageSelect extends Phaser.Scene {
         let scale = Math.max(scaleX, scaleY);
 
         background.setScale(scale).setScrollFactor(0).setOrigin(0.5).setDepth(9);
-        
+
 
         for (let y = 0; y < this.bossOptions.length; y++) {
             for (let x = 0; x < this.bossOptions[y].length; x++) {
                 const avatar = this.getBossAvatar(this.bossOptions[y][x]);
                 if (avatar) {
                     const bossImage = this.add.image(151 + x * 250, 95 + y * 200, avatar);
-                    bossImage.setScale(1.75).setDepth(3); 
+                    bossImage.setScale(1.75).setDepth(3);
                     bossMenuContainer.add(bossImage);
+                    const bossName = Object.keys(BossNames).indexOf(this.bossOptions[y][x]);
+                    this.add.text(151 + x * 250, 195 + y * 200, Object.values(BossNames)[bossName], {
+                        fontFamily: 'GameFont',
+                        fontSize: '13px',
+                        fontStyle: 'bold'
+                    }).setOrigin(0.5)
                 }
             }
         }

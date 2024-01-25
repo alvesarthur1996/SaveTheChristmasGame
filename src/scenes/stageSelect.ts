@@ -62,15 +62,20 @@ export default class StageSelect extends Phaser.Scene {
         let scale = Math.max(scaleX, scaleY);
 
         background.setScale(scale).setScrollFactor(0).setOrigin(0.5).setDepth(9);
-        bossMenuContainer.add(background);
+        
 
         for (let y = 0; y < this.bossOptions.length; y++) {
             for (let x = 0; x < this.bossOptions[y].length; x++) {
-                // const bossImage = this.add.image()
-
-                // bossMenuContainer.add(bossImage);
+                const avatar = this.getBossAvatar(this.bossOptions[y][x]);
+                if (avatar) {
+                    const bossImage = this.add.image(151 + x * 250, 95 + y * 200, avatar);
+                    bossImage.setScale(1.75).setDepth(3); 
+                    bossMenuContainer.add(bossImage);
+                }
             }
         }
+
+        bossMenuContainer.add(background);
 
         this.selector = this.add.image(151 + this.selectedBossIndex.x * 250, 95 + this.selectedBossIndex.y * 200, 'stage_select_cursor')
             .setScale(scale)
@@ -108,6 +113,17 @@ export default class StageSelect extends Phaser.Scene {
                 });
             }
         });
+    }
+
+    private getBossAvatar(Boss: Stages | string) {
+        switch (Boss) {
+            case Stages.CandyLand:
+                return 'ginger_mad_avatar';
+            case Stages.MadFactory:
+                return 'rudolph_avatar';
+            default:
+                return 'santa_avatar';
+        }
     }
 
     update() {

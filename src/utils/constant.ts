@@ -16,6 +16,9 @@ export const GameUtils: any =  {
         },
     },
     Images: [
+        {key:'santa_avatar', path: 'images/santa_avatar.jpg'},
+        {key:'rudolph_avatar', path: 'images/boss_avatar/rudolph_the_red.jpg'},
+        {key:'ginger_mad_avatar', path: 'images/boss_avatar/ginger_mad.jpg'},
         {key:'stage_select', path: 'images/stage_select.png'},
         {key:'stage_select_cursor', path: 'images/stage_select_cursor.png'},
         {key:'big_health', path: 'sprites/objects/big_life.png'},

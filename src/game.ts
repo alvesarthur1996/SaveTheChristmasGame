@@ -9,6 +9,8 @@ import GameController from './controllers/gameController';
 import MadFactoryStage from './scenes/stages/madFactoryStage';
 import CandyLandStage from './scenes/stages/candyLandStage';
 import GameTitle from './scenes/gameTitle';
+import OptionsMenu from './scenes/optionsMenu';
+import StageSelect from './scenes/stageSelect';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -37,8 +39,9 @@ declare module "phaser" {
 }
 
 const config: Phaser.Types.Core.GameConfig = {
+  title: "Save the Christmas",
   type: Phaser.AUTO,
-  mode: Phaser.Scale.CENTER_HORIZONTALLY,
+  mode: Phaser.Scale.FIT,
   autoCenter: Phaser.Scale.CENTER_BOTH,
   input: {
     gamepad: true,
@@ -52,7 +55,10 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [
     LoadingScene,
     GameTitle,
+    OptionsMenu,
+    StageSelect,
     CandyLandStage,
+    MadFactoryStage,
     GameController,
     UI,
     GameOverScene

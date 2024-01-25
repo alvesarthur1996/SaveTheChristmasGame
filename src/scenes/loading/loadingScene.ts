@@ -16,6 +16,7 @@ export default class LoadingScene extends Phaser.Scene {
         this.loadImages();
         this.loadSprites();
         this.loadAudios();
+
         // this.load.tilemapTiledJSON('mad_factory', 'maps/mad_factory/mad_factory.json');
     }
 
@@ -48,7 +49,7 @@ export default class LoadingScene extends Phaser.Scene {
         this.add.image(0,0,'loading_img');
         // setTimeout(()=>{
             // this.scene.start(Stages.CandyLand);
-            this.scene.start('game-title');
+            this.scene.start(Stages.MainMenu);
         // }, 5000);
     }
 };

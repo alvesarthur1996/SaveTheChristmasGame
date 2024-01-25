@@ -1,7 +1,17 @@
-* { margin: 0; padding: 0; overflow: hidden;}
+@font-face {
+  font-family: "GameFont";
+  src: url('./assets/fonts/Quinquefive-ALoRM.ttf');
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
 
 html, body {
-  height:100%;
+  height: 100%;
+  font-family: "GameFont";
 }
 
 body {
@@ -20,8 +30,23 @@ body {
 canvas {
   margin: auto;
 }
+
 /* canvas {
   width: 100%;
   height: 100%;
   object-fit: cover;
 } */
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden
+}
+
+body>canvas {
+  width: 100% !important;
+  height: 100% !important;
+  position: fixed;
+  top: 0;
+  left: 0
+}

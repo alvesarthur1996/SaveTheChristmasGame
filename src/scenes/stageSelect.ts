@@ -8,9 +8,9 @@ export default class StageSelect extends Phaser.Scene {
     private selector!: any;
     private bossContainer!: Phaser.GameObjects.Container;
     private bossOptions = [
-        [Stages.CandyLand, Stages.FrostyVal, Stages.MadFactory],
-        [Stages.MainMenu, "", Stages.Rolandia],
-        [Stages.ColdMountains, Stages.OptionsMenu, Stages.OptionsMenu],
+        [Stages.CandyLand, Stages.FrostyVal, Stages.WinterForest],
+        [Stages.MadFactory, "", Stages.Rolandia],
+        [Stages.ColdMountains, Stages.BadBoyCity, Stages.OptionsMenu],
     ];
 
     private selectedBossIndex = { x: 1, y: 1 };
@@ -128,6 +128,8 @@ export default class StageSelect extends Phaser.Scene {
             case Stages.CandyLand:
                 return 'ginger_mad_avatar';
             case Stages.MadFactory:
+                return 'elf_avatar';
+            case Stages.WinterForest:
                 return 'rudolph_avatar';
             case Stages.FrostyVal:
                 return 'frosty_avatar';
@@ -135,6 +137,8 @@ export default class StageSelect extends Phaser.Scene {
                 return 'yeti_avatar';
             case Stages.Rolandia:
                 return 'jack_avatar';
+            case Stages.BadBoyCity:
+                return 'bad_boy_avatar';
             default:
                 return 'santa_avatar';
         }

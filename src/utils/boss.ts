@@ -4,7 +4,9 @@ enum Boss {
     Yeti = 'Yeti',
     Frosty = 'Frosty',
     Greench = 'Greench',
-    JackWillis = 'JackWillis'
+    JackWillis = 'JackWillis',
+    SantaElf = 'SantaElf',
+    BadBoy = 'BadBoy',
 }
 
 export enum BossWeapon {

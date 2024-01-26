@@ -21,6 +21,8 @@ export const GameUtils: any =  {
         {key:'yeti_loading', path: 'images/loading_stages/yeti_loading.jpeg'},
         {key:'rudolph_loading', path: 'images/loading_stages/rudolph_loading.jpeg'},
         {key:'jack_loading', path: 'images/loading_stages/jack_loading.jpeg'},
+        {key:'elf_loading', path: 'images/loading_stages/elf_loading.jpeg'},
+        {key:'bad_boy_loading', path: 'images/loading_stages/bad_boy_loading.jpeg'},
 
         {key:'santa_avatar', path: 'images/santa_avatar.jpg'},
         {key:'rudolph_avatar', path: 'images/boss_avatar/rudolph_the_red.jpg'},
@@ -28,6 +30,8 @@ export const GameUtils: any =  {
         {key:'yeti_avatar', path: 'images/boss_avatar/yeti.jpg'},
         {key:'frosty_avatar', path: 'images/boss_avatar/frosty.jpg'},
         {key:'jack_avatar', path: 'images/boss_avatar/jack.jpg'},
+        {key:'elf_avatar', path: 'images/boss_avatar/elf.jpg'},
+        {key:'bad_boy_avatar', path: 'images/boss_avatar/bad_boy.jpg'},
 
         {key:'stage_select', path: 'images/stage_select.png'},
         {key:'stage_select_cursor', path: 'images/stage_select_cursor.png'},

@@ -665,7 +665,8 @@ export default class PlayerController {
 
         if (Phaser.Input.Keyboard.JustDown(this.cursors.change_weapon)) {
             const next: Weapons = this.weaponList.shift();
-            this.weaponList.push(this.currentWeapon);
+            if (!this.weaponList.includes(this.currentWeapon))
+                this.weaponList.push(this.currentWeapon);
             this.changeWeapon(next);
         }
 

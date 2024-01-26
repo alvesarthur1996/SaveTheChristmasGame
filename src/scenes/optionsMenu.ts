@@ -1,4 +1,6 @@
+import * as fs from 'fs';
 import Stages from "../utils/stages";
+
 
 export default class OptionsMenu extends Phaser.Scene {
     private buttons: Phaser.GameObjects.Text[] = [];

@@ -18,11 +18,17 @@ export const GameUtils: any =  {
     Images: [
         {key:'frosty_loading', path: 'images/loading_stages/frosty_loading.jpeg'},
         {key:'gingermad_loading', path: 'images/loading_stages/gingermad_loading.jpeg'},
+        {key:'yeti_loading', path: 'images/loading_stages/yeti_loading.jpeg'},
         {key:'rudolph_loading', path: 'images/loading_stages/rudolph_loading.jpeg'},
+        {key:'jack_loading', path: 'images/loading_stages/jack_loading.jpeg'},
 
         {key:'santa_avatar', path: 'images/santa_avatar.jpg'},
         {key:'rudolph_avatar', path: 'images/boss_avatar/rudolph_the_red.jpg'},
         {key:'ginger_mad_avatar', path: 'images/boss_avatar/ginger_mad.jpg'},
+        {key:'yeti_avatar', path: 'images/boss_avatar/yeti.jpg'},
+        {key:'frosty_avatar', path: 'images/boss_avatar/frosty.jpg'},
+        {key:'jack_avatar', path: 'images/boss_avatar/jack.jpg'},
+
         {key:'stage_select', path: 'images/stage_select.png'},
         {key:'stage_select_cursor', path: 'images/stage_select_cursor.png'},
         {key:'big_health', path: 'sprites/objects/big_life.png'},

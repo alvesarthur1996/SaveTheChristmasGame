@@ -8,9 +8,9 @@ export default class StageSelect extends Phaser.Scene {
     private selector!: any;
     private bossContainer!: Phaser.GameObjects.Container;
     private bossOptions = [
-        [Stages.CandyLand, Stages.CandyLand, Stages.MadFactory],
-        [Stages.MainMenu, "", Stages.MainMenu],
-        [Stages.OptionsMenu, Stages.OptionsMenu, Stages.OptionsMenu],
+        [Stages.CandyLand, Stages.FrostyVal, Stages.MadFactory],
+        [Stages.MainMenu, "", Stages.Rolandia],
+        [Stages.ColdMountains, Stages.OptionsMenu, Stages.OptionsMenu],
     ];
 
     private selectedBossIndex = { x: 1, y: 1 };
@@ -70,13 +70,14 @@ export default class StageSelect extends Phaser.Scene {
                 const avatar = this.getBossAvatar(this.bossOptions[y][x]);
                 if (avatar) {
                     const bossImage = this.add.image(151 + x * 250, 95 + y * 200, avatar);
-                    bossImage.setScale(1.75).setDepth(3);
+                    bossImage.setScale(avatar == 'santa_avatar' ? 1.75 : 0.2).setDepth(3);
                     bossMenuContainer.add(bossImage);
                     const bossName = Object.keys(BossNames).indexOf(this.bossOptions[y][x]);
-                    this.add.text(151 + x * 250, 195 + y * 200, Object.values(BossNames)[bossName], {
+                    this.add.text(151 + x * 250, 187 + y * 200, Object.values(BossNames)[bossName], {
                         fontFamily: 'GameFont',
                         fontSize: '13px',
-                        fontStyle: 'bold'
+                        fontStyle: 'bold',
+                        lineSpacing: 2.5
                     }).setOrigin(0.5)
                 }
             }
@@ -128,6 +129,12 @@ export default class StageSelect extends Phaser.Scene {
                 return 'ginger_mad_avatar';
             case Stages.MadFactory:
                 return 'rudolph_avatar';
+            case Stages.FrostyVal:
+                return 'frosty_avatar';
+            case Stages.ColdMountains:
+                return 'yeti_avatar';
+            case Stages.Rolandia:
+                return 'jack_avatar';
             default:
                 return 'santa_avatar';
         }

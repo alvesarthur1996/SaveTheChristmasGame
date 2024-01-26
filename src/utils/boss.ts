@@ -1,6 +1,10 @@
 enum Boss {
     GingerMad = 'GingerMad',
     RudolphTheRed = 'RudolphTheRed',
+    Yeti = 'Yeti',
+    Frosty = 'Frosty',
+    Greench = 'Greench',
+    JackWillis = 'JackWillis'
 }
 
 export enum BossWeapon {

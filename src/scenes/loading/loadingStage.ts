@@ -122,7 +122,7 @@ export default class LoadingStage extends Phaser.Scene {
                 this.bossSprite.anims.create({
                     key: 'intro',
                     frames: this.bossSprite.anims.generateFrameNames(BossAtlas.RudolphTheRed, {
-                        prefix: 'shoot_',
+                        prefix: 'idle_',
                         start: 0,
                         end: 11,
                     }),

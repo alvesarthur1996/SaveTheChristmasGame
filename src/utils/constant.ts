@@ -16,6 +16,10 @@ export const GameUtils: any =  {
         },
     },
     Images: [
+        {key:'frosty_loading', path: 'images/loading_stages/frosty_loading.jpeg'},
+        {key:'gingermad_loading', path: 'images/loading_stages/gingermad_loading.jpeg'},
+        {key:'rudolph_loading', path: 'images/loading_stages/rudolph_loading.jpeg'},
+
         {key:'santa_avatar', path: 'images/santa_avatar.jpg'},
         {key:'rudolph_avatar', path: 'images/boss_avatar/rudolph_the_red.jpg'},
         {key:'ginger_mad_avatar', path: 'images/boss_avatar/ginger_mad.jpg'},
@@ -36,6 +40,7 @@ export const GameUtils: any =  {
     ],
     Audios: [
         {key:'candy_land_stage', path: '/sounds/candy_land_stage.mp3'},
+        {key:'boss_splash', path: '/sounds/boss_splash.wav'},
     ],
     Sprites: [
         {

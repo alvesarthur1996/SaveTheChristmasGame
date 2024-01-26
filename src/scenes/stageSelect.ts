@@ -32,13 +32,14 @@ export default class StageSelect extends Phaser.Scene {
     private confirmSelection() {
         const currentScene = this.scene;
         const SelectedStage = this.bossOptions[this.selectedBossIndex.y][this.selectedBossIndex.x];
-        console.log(SelectedStage);
         if (!SelectedStage) return;
 
         this.cameras.main.fadeOut(500, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', function () {
             currentScene.stop(Stages.SelectStage);
-            currentScene.start(SelectedStage);
+            currentScene.start(Stages.LoadingStage, {
+                stage: SelectedStage
+            });
         });
     }
 

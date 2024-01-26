@@ -11,6 +11,7 @@ import CandyLandStage from './scenes/stages/candyLandStage';
 import GameTitle from './scenes/gameTitle';
 import OptionsMenu from './scenes/optionsMenu';
 import StageSelect from './scenes/stageSelect';
+import LoadingStage from './scenes/loading/loadingStage';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -50,13 +51,15 @@ const config: Phaser.Types.Core.GameConfig = {
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
   fps: {
-    min: 60
+    min: 60,
+    target: 60
   },
   scene: [
     LoadingScene,
     GameTitle,
     OptionsMenu,
     StageSelect,
+    LoadingStage,
     CandyLandStage,
     MadFactoryStage,
     GameController,

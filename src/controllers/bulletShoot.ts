@@ -26,11 +26,11 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
         });
     }
 
-    protected onCollideCallback ({ bodyA, bodyB, pair }) {
+    protected onCollideCallback({ bodyA, bodyB, pair }) {
         if (bodyB?.gameObject instanceof Phaser.Physics.Matter.TileBody) {
             return;
         }
-       
+
         if (bodyB?.gameObject instanceof BulletShoot) {
             return;
         }
@@ -39,14 +39,16 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
             const type = bodyB?.gameObject.getData('type') ?? null;
             if (type == 'boss')
                 this.setActive(false);
-                this.setVisible(false);
-                this.world.remove([this.body], true);
+            this.setVisible(false);
+            this.world.remove([this.body], true);
             return;
         }
     }
 
     fire(charSprite: Phaser.Physics.Matter.Sprite) {
-        // fire(x: number, y: number, angle: number, speed: number, spriteFlipped: boolean = false) {
+        this.scene.sound.play('snow_buster', {
+            volume: 0.3
+        });
         this.play('shoot');
         this.world.add([this.body]);
         this.flipX = charSprite.flipX;

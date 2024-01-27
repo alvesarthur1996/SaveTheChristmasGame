@@ -364,6 +364,7 @@ export default class PlayerController {
 
     private deathOnEnter() {
         this.sprite.play('death');
+        this.scene.sound.play('death')
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
 
         events.emit(GameEvents.LifeLoss, -1);

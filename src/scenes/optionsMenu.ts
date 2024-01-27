@@ -123,12 +123,18 @@ export default class OptionsMenu extends Phaser.Scene {
         const spaceJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.space!)
 
         if (upJustPressed) {
+            this.sound.play('cursor_move');
+
             this.selectNextButton(-1)
         }
         else if (downJustPressed) {
+            this.sound.play('cursor_move');
+
             this.selectNextButton(1)
         }
         else if (spaceJustPressed) {
+            this.sound.play('cursor_move');
+
             this.confirmSelection()
             console.log(this.selectedButton, this.buttons[this.selectedButton]);
         }

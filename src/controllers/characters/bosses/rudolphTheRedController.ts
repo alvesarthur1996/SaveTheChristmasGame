@@ -165,7 +165,7 @@ export default class RudolphTheRedController implements IBoss {
         });
     }
     private deathOnEnter() {
-
+        this.scene.sound.play('death');
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
         this.destroy()
     }

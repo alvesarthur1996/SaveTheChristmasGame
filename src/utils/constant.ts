@@ -51,8 +51,15 @@ export const GameUtils: any =  {
         {key:'game_title', path: 'images/game_title.jpeg'},
     ],
     Audios: [
-        {key:'candy_land_stage', path: '/sounds/candy_land_stage.mp3'},
+        {key:'death', path: '/sounds/death.mp3'},
+        {key:'candy_land_stage', path: '/sounds/candy_land_stage.wav'},
         {key:'boss_splash', path: '/sounds/boss_splash.wav'},
+        {key:'cursor_move', path: '/sounds/cursor_move.wav'},
+        {key:'snow_buster', path: '/sounds/snow_buster.wav'},
+        {key:'laser_beam', path: '/sounds/laser_beam.wav'},
+        {key:'select_stage', path: '/sounds/select_stage.wav'},
+        {key:'boss_fight', path: '/sounds/boss_fight.mp3'},
+        {key:'main_menu', path: '/sounds/main_menu.wav'},
     ],
     Sprites: [
         {

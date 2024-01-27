@@ -31,6 +31,9 @@ export default class LaserBeam extends BulletShoot {
 
     fire(charSprite: Phaser.Physics.Matter.Sprite, flipped: boolean = false) {
         this.play('shoot');
+        this.scene.sound.play('laser_beam', {
+            volume: 0.3
+        });
         this.world.add([this.body]);
         if (flipped)
             this.flipX = !charSprite.flipX;

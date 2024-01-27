@@ -49,6 +49,10 @@ export default class GameTitle extends Phaser.Scene {
     create() {
         const { width, height } = this.scale;
         this.add.rectangle(width / 2, height / 2, width, height, 0x000000).setOrigin(0.5);
+        const bgm = this.sound.play('main_menu', {
+            loop: true,
+            volume: 0.6
+        });
 
         let bg = this.add.image(width / 2, height / 3.4, 'game_title',).setScale(0.85);
         bg.postFX.addVignette(0.5, 0.675, 0.3);
@@ -89,6 +93,9 @@ export default class GameTitle extends Phaser.Scene {
                 onComplete: function () {
                     currentScene.scene.cameras.main.fade(250, 0, 0, 0);
                     currentScene.scene.cameras.main.once("camerafadeoutcomplete", () => {
+                        let sound = currentScene.scene.sound.get('main_menu');
+                        sound.destroy();
+                        currentScene.stop(Stages.MainMenu);
                         currentScene.stop(Stages.OptionsMenu);
                         currentScene.start(Stages.SelectStage);
                     });
@@ -133,12 +140,15 @@ export default class GameTitle extends Phaser.Scene {
         const spaceJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.space!)
 
         if (upJustPressed) {
+            this.sound.play('cursor_move');
             this.selectNextButton(-1)
         }
         else if (downJustPressed) {
+            this.sound.play('cursor_move');
             this.selectNextButton(1)
         }
         else if (spaceJustPressed) {
+            this.sound.play('cursor_move');
             this.confirmSelection()
         }
     }

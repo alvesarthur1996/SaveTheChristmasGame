@@ -37,6 +37,8 @@ export default class CandyLandStage extends Phaser.Scene {
     }
 
     create() {
+        this.sound.play('candy_land_stage', { loop: true, volume: 0.45 });
+        let sound = this.sound.get('candy_land_stage');
         try {
             const map = this.mountMap();
             const objectLayer: Tilemaps.ObjectLayer | null = map.getObjectLayer('objects');
@@ -70,9 +72,17 @@ export default class CandyLandStage extends Phaser.Scene {
             this.matter.world.convertTilemapLayer(this.stage.room_6);
             this.matter.world.convertTilemapLayer(this.stage.boss);
 
+            // events.once('boss_arrived', () => {
+            events.once('room_boss_camera_trigger', () => {
+                sound.destroy();
+                this.sound.play('boss_fight', { loop: true, volume: 0.45 });
+                sound = this.sound.get('boss_fight');
+            });
+
             this.events.once('shutdown', () => {
                 this.bossController = undefined;
-              });
+                sound.destroy();
+            });
 
         } catch (err) {
             console.log("ERROR: ", err)
@@ -194,9 +204,9 @@ export default class CandyLandStage extends Phaser.Scene {
                         this.stage.room_6.setVisible(false);
 
                         setTimeout(() => {
-                            if(this.bossController) return;
-                            // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
-                            let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
+                            if (this.bossController) return;
+                            let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
+                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
                             events.emit('boss_arrived', 28)

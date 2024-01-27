@@ -36,6 +36,8 @@ export default class StageSelect extends Phaser.Scene {
 
         this.cameras.main.fadeOut(500, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', function () {
+            let sound = currentScene.scene.sound.get('select_stage');
+            sound.destroy();
             currentScene.stop(Stages.SelectStage);
             currentScene.start(Stages.LoadingStage, {
                 stage: SelectedStage
@@ -44,6 +46,11 @@ export default class StageSelect extends Phaser.Scene {
     }
 
     create() {
+        this.sound.play('select_stage', {
+            loop: true,
+            volume: 0.45,
+        });
+
         const { width, height } = this.scale;
         this.add.rectangle(width / 2, height / 2, width, height, 0x000000).setOrigin(0.5);
 
@@ -105,7 +112,7 @@ export default class StageSelect extends Phaser.Scene {
     }
 
     private selectBoss(deltaX: number, deltaY: number) {
-        // Move the cursor based on the given delta values
+        this.sound.play('cursor_move');
         this.selectedBossIndex.x = Phaser.Math.Clamp(this.selectedBossIndex.x + deltaX, 0, this.bossOptions[0].length - 1);
         this.selectedBossIndex.y = Phaser.Math.Clamp(this.selectedBossIndex.y + deltaY, 0, this.bossOptions.length - 1);
 
@@ -153,19 +160,19 @@ export default class StageSelect extends Phaser.Scene {
         const rightJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.right!)
         const spaceJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.space!)
 
-        if (upJustPressed) {
+        if (upJustPressed) { 
             this.selectBoss(0, -1)
         }
-        else if (downJustPressed) {
+        else if (downJustPressed) { 
             this.selectBoss(0, 1)
         }
-        else if (leftJustPressed) {
+        else if (leftJustPressed) { 
             this.selectBoss(-1, 0)
         }
-        else if (rightJustPressed) {
+        else if (rightJustPressed) { 
             this.selectBoss(1, 0)
         }
-        else if (spaceJustPressed) {
+        else if (spaceJustPressed) { 
             this.confirmSelection()
         }
     }

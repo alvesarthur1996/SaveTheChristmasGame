@@ -10,7 +10,7 @@ export default class StageSelect extends Phaser.Scene {
     private bossOptions = [
         [Stages.CandyLand, Stages.FrostyVal, Stages.WinterForest],
         [Stages.MadFactory, "", Stages.Rolandia],
-        [Stages.ColdMountains, Stages.BadBoyCity, Stages.OptionsMenu],
+        [Stages.ColdMountains, Stages.BadBoyCity, Stages.TheCave],
     ];
 
     private selectedBossIndex = { x: 1, y: 1 };
@@ -69,8 +69,8 @@ export default class StageSelect extends Phaser.Scene {
             for (let x = 0; x < this.bossOptions[y].length; x++) {
                 const avatar = this.getBossAvatar(this.bossOptions[y][x]);
                 if (avatar) {
-                    const bossImage = this.add.image(151 + x * 250, 95 + y * 200, avatar);
-                    bossImage.setScale(avatar == 'santa_avatar' ? 1.75 : 0.2).setDepth(3);
+                    const bossImage = this.add.image(151 + x * 250, 98 + y * 200, avatar);
+                    bossImage.setScale(avatar == 'santa_avatar' ? 1.7 : 0.22).setDepth(3);
                     bossMenuContainer.add(bossImage);
                     const bossName = Object.keys(BossNames).indexOf(this.bossOptions[y][x]);
                     this.add.text(151 + x * 250, 187 + y * 200, Object.values(BossNames)[bossName], {
@@ -139,6 +139,8 @@ export default class StageSelect extends Phaser.Scene {
                 return 'jack_avatar';
             case Stages.BadBoyCity:
                 return 'bad_boy_avatar';
+            case Stages.TheCave:
+                return 'greedy_green_avatar';
             default:
                 return 'santa_avatar';
         }

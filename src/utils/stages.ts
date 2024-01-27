@@ -6,6 +6,7 @@ export enum Stages {
     ColdMountains = 'ColdMountains',
     Rolandia = 'Rolandia',
     BadBoyCity = 'BadBoyCity',
+    TheCave = 'TheCave',
     SelectStage = 'SelectStage',
     MainMenu = 'MainMenu',
     OptionsMenu = 'OptionsMenu',
@@ -20,6 +21,7 @@ export enum BossNames {
     ColdMountains = "Yeti",
     Rolandia = "Jack Willis",
     BadBoyCity = 'Bad Boy',
+    TheCave = 'Greedy Green',
 
 }
 
@@ -30,7 +32,8 @@ export enum LoadingStagesImages {
     FrostyVal = 'frosty_loading',
     ColdMountains = 'yeti_loading',
     Rolandia = 'jack_loading',
-    BadBoyCity = 'bad_boy_loading'
+    BadBoyCity = 'bad_boy_loading',
+    TheCave = 'greedy_green_loading'
 }
 
 export default Stages

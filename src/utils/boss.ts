@@ -3,7 +3,7 @@ enum Boss {
     RudolphTheRed = 'RudolphTheRed',
     Yeti = 'Yeti',
     Frosty = 'Frosty',
-    Greench = 'Greench',
+    GreedyGreen = 'GreedyGreen',
     JackWillis = 'JackWillis',
     SantaElf = 'SantaElf',
     BadBoy = 'BadBoy',

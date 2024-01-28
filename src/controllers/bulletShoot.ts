@@ -2,6 +2,7 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
     public lifespan: number = 0;
     public damage = 1;
     public speed = 4;
+    public consume = 1;
 
     constructor(
         world: Phaser.Physics.Matter.World,
@@ -13,6 +14,7 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
         super(world, x, y, texture, undefined, { plugin: bodyOptions });
         this.setFrictionAir(0);
         this.setActive(false);
+        this.setVisible(false);
         this.setData('type', 'shoot');
         this.setSensor(true);
 

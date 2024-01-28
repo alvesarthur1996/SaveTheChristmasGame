@@ -18,6 +18,7 @@ export default class IceBlock extends BulletShoot {
         this.setStatic(true);
         this.setFixedRotation();
         this.damage = 2;
+        this.consume = 3;
 
         this.anims.create({
             key: 'shoot',
@@ -68,6 +69,6 @@ export default class IceBlock extends BulletShoot {
         // this.setVelocityX((this.flipX ? -1 : 1) * this.speed * Math.cos(charSprite.angle));
         // this.setVelocityY(speed * Math.sin(angle));
 
-        this.lifespan = 5000;
+        this.lifespan = 3500;
     }
 };

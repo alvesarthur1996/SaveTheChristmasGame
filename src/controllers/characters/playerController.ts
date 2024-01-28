@@ -51,10 +51,11 @@ export default class PlayerController {
     private invencibility = false;
     public spawnPosition = { x: 0, y: 0 };
     private lifeCounter = 3;
-    // private weaponList: Map<Weapons, BulletShoot> = new Map();
     // private currentWeapon!: BulletShoot;
-    private weaponList: Array<Weapons> = [];
-    private currentWeapon!: Weapons;
+    // private weaponList: Map<Weapons, BulletShoot> = new Map();
+    private weaponList: Map<Weapons, number | null> = new Map();
+    private currentWeapon: Weapons = Weapons.SnowBuster;
+    private currentWeaponEnergy: null | number = null;
     private shoots: Array<BulletShoot> = [];
 
     private lastEnemy?: Phaser.Physics.Matter.Sprite
@@ -127,15 +128,12 @@ export default class PlayerController {
             })
             .setState('idle');
 
-        this.weaponList.push(Weapons.SnowBuster);
-        this.weaponList.push(Weapons.CandyBoomerang);
-        this.weaponList.push(Weapons.LaserBeam);
-        this.weaponList.push(Weapons.IceBlock);
-        this.changeWeapon(Weapons.IceBlock);
+        this.weaponList.set(Weapons.SnowBuster, null);
+        this.weaponList.set(Weapons.CandyBoomerang, 28);
+        this.weaponList.set(Weapons.LaserBeam, 28);
+        this.weaponList.set(Weapons.IceBlock, 28);
+        this.changeWeapon(Weapons.SnowBuster);
 
-
-        // this.changeWeapon(this.weaponList.get(Weapons.SnowBuster));
-        // , new SnowBuster(this.scene.matter.world, this.sprite.x, this.sprite.y, 'snow_buster', {}));
 
         this.scene.matter.world.on("beforeupdate", this.resetTouching, this);
         scene.matterCollision.addOnCollideStart({
@@ -187,6 +185,20 @@ export default class PlayerController {
             } else {
                 this.sprite.setVelocityX(0);
             }
+
+        const shotTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.shoot);
+        if (shotTriggered) {
+            const shoot = this.shoots.find(shoot => !shoot.active);
+            this.sprite.setFrame('jump_shot');
+
+            if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
+                shoot.fire(this.sprite);
+                this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
+                events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+            } else if (shoot && this.currentWeaponEnergy == null) {
+                shoot.fire(this.sprite);
+            }
+        }
     }
 
     private moveOnEnter() {
@@ -223,13 +235,18 @@ export default class PlayerController {
     private moveShotOnEnter() {
         this.sprite.play('move_shot');
         const shoot = this.shoots.find(shoot => !shoot.active);
-        if (shoot) {
+
+        if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
+            shoot.fire(this.sprite);
+            this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
+            events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+        } else if (shoot && this.currentWeaponEnergy == null) {
             shoot.fire(this.sprite);
         }
     }
+
     private moveShotOnUpdate() {
         const speedX = 1.5;
-
 
         if (this.stateMachine.isCurrentState('move_shot') && !this.cursors.shoot.isDown)
             this.stateMachine.setState('move');
@@ -263,27 +280,51 @@ export default class PlayerController {
         this.sprite.setVelocityY(-5.1);
         this.speedY = -5.1;
     }
+
     private jumpOnUpdate(dt: number) {
         const speedX = 1.5;
         this.sprite.setFrame('jump');
-        if (this.stateMachine.isCurrentState('jump'))
-            // this.fallSpeedFactor(dt);
 
-            if (this.cursors.left.isDown && !this.isTouching.left) {
-                this.sprite.flipX = true;
-                this.sprite.setVelocityX(-speedX);
-            } else if (this.cursors.right.isDown && !this.isTouching.right) {
-                this.sprite.flipX = false;
-                this.sprite.setVelocityX(speedX);
-            } else {
-                this.sprite.setVelocityX(0);
+        // if (this.stateMachine.isCurrentState('jump'))
+        // this.fallSpeedFactor(dt);
+
+        if (this.cursors.left.isDown && !this.isTouching.left) {
+            this.sprite.flipX = true;
+            this.sprite.setVelocityX(-speedX);
+        } else if (this.cursors.right.isDown && !this.isTouching.right) {
+            this.sprite.flipX = false;
+            this.sprite.setVelocityX(speedX);
+        } else {
+            this.sprite.setVelocityX(0);
+        }
+
+        const shotTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.shoot);
+        if (shotTriggered) {
+            const shoot = this.shoots.find(shoot => !shoot.active);
+
+            this.sprite.setFrame('jump_shot');
+            if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
+                shoot.fire(this.sprite);
+                this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
+                events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+            } else if (shoot && this.currentWeaponEnergy == null) {
+                shoot.fire(this.sprite);
             }
+        }
     }
 
     private shootOnEnter() {
         const shoot = this.shoots.find(shoot => !shoot.active);
-        if (shoot) {
+
+        if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
             shoot.fire(this.sprite);
+            this.stateMachine.setState('idle');
+            this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
+            events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+        } else if (shoot && this.currentWeaponEnergy == null) {
+            shoot.fire(this.sprite);
+            this.stateMachine.setState('idle');
+        } else {
             this.stateMachine.setState('idle');
         }
     }
@@ -367,7 +408,7 @@ export default class PlayerController {
         this.scene.sound.play('death')
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
 
-        events.emit(GameEvents.LifeLoss, -1);
+        events.emit(GameEvents.LifeLoss);
 
         this.scene.time.delayedCall(2000, () => {
             this.scene.cameras.main.fade(250, 0, 0, 0);
@@ -627,7 +668,6 @@ export default class PlayerController {
     }
 
     private changeWeapon(weapon: Weapons) {
-        // if (this.weaponList.filter(i => i == weapon).length)
         this.currentWeapon = weapon;
 
         this.shoots.forEach(item => item.destroy());
@@ -642,6 +682,21 @@ export default class PlayerController {
             });
             if (weapon) this.shoots.push(weapon);
         }
+    }
+
+    private handleChangeCurrentWeapon() {
+        const currentWeaponShoots: number | null = this.currentWeaponEnergy;
+        this.weaponList.delete(this.currentWeapon);
+
+        const nextWeapon = this.weaponList.entries().next();
+        const { value }: IteratorResult<[Weapons, number | null], any> = nextWeapon;
+        const weaponName: Weapons = value[0];
+        const weaponEnergy: number | null = value[1];
+        this.weaponList.set(this.currentWeapon, currentWeaponShoots);
+        this.currentWeaponEnergy = weaponEnergy;
+
+        events.emit('weapon_changed', { weaponName, weaponEnergy });
+        this.changeWeapon(weaponName);
     }
 
     destroy() {
@@ -665,10 +720,8 @@ export default class PlayerController {
         this.stateMachine.update(dt);
 
         if (Phaser.Input.Keyboard.JustDown(this.cursors.change_weapon)) {
-            const next: Weapons = this.weaponList.shift();
-            if (!this.weaponList.includes(this.currentWeapon))
-                this.weaponList.push(this.currentWeapon);
-            this.changeWeapon(next);
+
+            this.handleChangeCurrentWeapon();
         }
 
     }

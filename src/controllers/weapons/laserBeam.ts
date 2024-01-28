@@ -17,7 +17,8 @@ export default class LaserBeam extends BulletShoot {
         this.setName(Weapons.LaserBeam);
         this.damage = 2;
         this.speed = 5.1;
-
+        this.consume = 2;
+        
         this.anims.create({
             key: 'shoot',
             frames: this.anims.generateFrameNames(WeaponsAtlas.LaserBeam, {

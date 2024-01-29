@@ -81,7 +81,8 @@ export default class CandyLandStage extends Phaser.Scene {
 
             this.events.once('shutdown', () => {
                 this.bossController = undefined;
-                sound.destroy();
+                this.sound.removeAll();
+                // sound.destroy();
             });
 
         } catch (err) {

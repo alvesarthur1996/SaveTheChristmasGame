@@ -1,7 +1,6 @@
 import 'phaser';
 
 import LoadingScene from './scenes/loading/loadingScene';
-import GameScene from './scenes/gameScene';
 import UI from './scenes/ui/UI';
 import GameOverScene from './scenes/gameOverScene';
 import { PhaserMatterCollisionPlugin } from 'phaser-matter-collision-plugin'
@@ -12,7 +11,6 @@ import GameTitle from './scenes/gameTitle';
 import OptionsMenu from './scenes/optionsMenu';
 import StageSelect from './scenes/stageSelect';
 import LoadingStage from './scenes/loading/loadingStage';
-import MergedInput from 'phaser3-merged-input';
 import TitleScreen from './scenes/titleScreen';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
@@ -29,22 +27,15 @@ const matterCollision = {
   mapping: "matterCollision" as "matterCollision"
 };
 
-const mergedInput = {
-  plugin: MergedInput,
-  key: "mergedInput" as "mergedInput",
-  mapping: "mergedInput" as "mergedInput",
-};
 
 declare module "phaser" {
   interface Scene {
     [matterCollision.mapping]: PhaserMatterCollisionPlugin;
-    [mergedInput.mapping]: MergedInput;
   }
   /* eslint-disable @typescript-eslint/no-namespace */
   namespace Scenes {
     interface Systems {
       [matterCollision.key]: PhaserMatterCollisionPlugin;
-      [mergedInput.key]: MergedInput;
     }
   }
 }

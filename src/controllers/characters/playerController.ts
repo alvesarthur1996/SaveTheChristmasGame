@@ -12,6 +12,9 @@ import { callWeaponClassDinamically } from '../../utils/functions';
 import Boss, { BossWeapon } from '../../utils/boss';
 import GingerMadController from './bosses/gingerMadController';
 import RudolphTheRedController from './bosses/rudolphTheRedController';
+import JoystickProvider, { GamepadInput } from '../joystick/joystickProvider';
+import KeyboardProvider from '../joystick/keyboardProvider';
+import InputHandler from '../joystick/InputHandler';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -42,8 +45,11 @@ export default class PlayerController {
     private obstacles: ObstaclesController;
     private interactions: InteractionsController;
     private stateMachine: StateMachine;
-    private cursors!: {}
     private destroyed = false;
+
+    private controller!: JoystickProvider;
+    private keyboard!: KeyboardProvider;
+    private inputHandler!: InputHandler;
 
     private isTouching: TouchingDetection;
     private speedY = 0;
@@ -51,8 +57,7 @@ export default class PlayerController {
     private invencibility = false;
     public spawnPosition = { x: 0, y: 0 };
     private lifeCounter = 3;
-    // private currentWeapon!: BulletShoot;
-    // private weaponList: Map<Weapons, BulletShoot> = new Map();
+    
     private weaponList: Map<Weapons, number | null> = new Map();
     private currentWeapon: Weapons = Weapons.SnowBuster;
     private currentWeaponEnergy: null | number = null;
@@ -69,15 +74,9 @@ export default class PlayerController {
         this.createAnimations();
         this.stateMachine = new StateMachine(this, 'player');
         this.isTouching = { left: false, right: false, ground: false };
-        this.cursors = this.scene.input.keyboard!.addKeys({
-            up: Phaser.Input.Keyboard.KeyCodes.W,
-            left: Phaser.Input.Keyboard.KeyCodes.A,
-            right: Phaser.Input.Keyboard.KeyCodes.D,
-            down: Phaser.Input.Keyboard.KeyCodes.S,
-            jump: Phaser.Input.Keyboard.KeyCodes.K,
-            shoot: Phaser.Input.Keyboard.KeyCodes.L,
-            change_weapon: Phaser.Input.Keyboard.KeyCodes.P,
-        });
+
+        /** Start Joystick and Keyboard */
+        this.startControllers(scene);
 
         let spawnPosition: any = localStorage.getItem('spawnPosition');
         if (spawnPosition) {
@@ -157,11 +156,11 @@ export default class PlayerController {
     private idleOnUpdate() {
         const velocity = this.sprite.getVelocity();
 
-        if (this.cursors.left.isDown || this.cursors.right.isDown)
+        if (this.inputHandler.isDown('left') || this.inputHandler.isDown('right'))
             this.stateMachine.setState('move')
-        else if (Phaser.Input.Keyboard.JustDown(this.cursors.jump))
+        else if (this.inputHandler.isJustDown('A'))
             this.stateMachine.setState('jump');
-        else if (Phaser.Input.Keyboard.JustDown(this.cursors.shoot))
+        else if (this.inputHandler.isJustDown('X'))
             this.stateMachine.setState('shoot');
         else if (velocity.y >= 1.2)
             this.stateMachine.setState('falling');
@@ -176,17 +175,17 @@ export default class PlayerController {
         if (this.stateMachine.isCurrentState('falling'))
             // this.fallSpeedFactor(dt);
 
-            if (this.cursors.left.isDown && !this.isTouching.left) {
+            if (this.inputHandler.isDown('left') && !this.isTouching.left) {
                 this.sprite.flipX = true;
                 this.sprite.setVelocityX(-speedX);
-            } else if (this.cursors.right.isDown && !this.isTouching.right) {
+            } else if (this.inputHandler.isDown('right') && !this.isTouching.right) {
                 this.sprite.flipX = false;
                 this.sprite.setVelocityX(speedX);
             } else {
                 this.sprite.setVelocityX(0);
             }
 
-        const shotTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.shoot);
+        const shotTriggered = this.inputHandler.isJustDown('X');
         if (shotTriggered) {
             const shoot = this.shoots.find(shoot => !shoot.active);
             this.sprite.setFrame('jump_shot');
@@ -207,17 +206,17 @@ export default class PlayerController {
     private moveOnUpdate() {
         const speedX = 1.5;
 
-        if (this.cursors.left.isDown && !this.isTouching.left) {
+        if (this.inputHandler.isDown('left') && !this.isTouching.left) {
             this.sprite.flipX = true;
             this.sprite.setVelocityX(-speedX);
-        } else if (this.cursors.right.isDown && !this.isTouching.right) {
+        } else if (this.inputHandler.isDown('right') && !this.isTouching.right) {
             this.sprite.flipX = false;
             this.sprite.setVelocityX(speedX);
         } else {
             this.sprite.setVelocityX(0);
             this.stateMachine.setState('idle');
         }
-        const shotTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.shoot);
+        const shotTriggered = this.inputHandler.isJustDown('X');
         if (shotTriggered)
             this.stateMachine.setState('move_shot');
 
@@ -225,7 +224,7 @@ export default class PlayerController {
         if (velocity.y > 1.5)
             this.stateMachine.setState('falling');
 
-        const jumpTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.jump);
+        const jumpTriggered = this.inputHandler.isJustDown('A');
 
         if (jumpTriggered && this.isTouching.ground) {
             this.stateMachine.setState('jump');
@@ -248,13 +247,13 @@ export default class PlayerController {
     private moveShotOnUpdate() {
         const speedX = 1.5;
 
-        if (this.stateMachine.isCurrentState('move_shot') && !this.cursors.shoot.isDown)
+        if (this.stateMachine.isCurrentState('move_shot') && !this.inputHandler.isJustDown('X'))
             this.stateMachine.setState('move');
 
-        if (this.cursors.left.isDown) {
+        if (this.inputHandler.isDown('left')) {
             this.sprite.flipX = true;
             this.sprite.setVelocityX(-speedX);
-        } else if (this.cursors.right.isDown) {
+        } else if (this.inputHandler.isDown('right')) {
             this.sprite.flipX = false;
             this.sprite.setVelocityX(speedX);
         } else {
@@ -262,7 +261,7 @@ export default class PlayerController {
             this.stateMachine.setState('idle');
         }
 
-        const jumpTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.jump);
+        const jumpTriggered = this.inputHandler.isJustDown('A');
 
         if (jumpTriggered) {
             this.stateMachine.setState('jump');
@@ -288,17 +287,17 @@ export default class PlayerController {
         // if (this.stateMachine.isCurrentState('jump'))
         // this.fallSpeedFactor(dt);
 
-        if (this.cursors.left.isDown && !this.isTouching.left) {
+        if (this.inputHandler.isDown('left') && !this.isTouching.left) {
             this.sprite.flipX = true;
             this.sprite.setVelocityX(-speedX);
-        } else if (this.cursors.right.isDown && !this.isTouching.right) {
+        } else if (this.inputHandler.isDown('right') && !this.isTouching.right) {
             this.sprite.flipX = false;
             this.sprite.setVelocityX(speedX);
         } else {
             this.sprite.setVelocityX(0);
         }
 
-        const shotTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.shoot);
+        const shotTriggered = this.inputHandler.isJustDown('X');
         if (shotTriggered) {
             const shoot = this.shoots.find(shoot => !shoot.active);
 
@@ -387,14 +386,14 @@ export default class PlayerController {
         this.sprite.setIgnoreGravity(true)
     }
     private climbOnUpdate(dt) {
-        if (this.cursors.up.isDown)
+        if (this.inputHandler.isDown('up'))
             this.sprite.setVelocityY(-2);
-        else if (this.cursors.down.isDown)
+        else if (this.inputHandler.isDown('down'))
             this.sprite.setVelocityY(2);
         else
             this.sprite.setVelocityY(0);
 
-        const jumpTriggered = Phaser.Input.Keyboard.JustDown(this.cursors.jump);
+        const jumpTriggered = this.inputHandler.isJustDown('A');
 
         if (jumpTriggered)
             this.stateMachine.setState('jump');
@@ -579,7 +578,7 @@ export default class PlayerController {
 
     private stageInteractionHandler(body: any) {
         if (body.label == 'ladder') {
-            if (this.cursors.up.isDown && !this.stateMachine.isCurrentState('climb')) {
+            if (this.inputHandler.isDown('up') && !this.stateMachine.isCurrentState('climb')) {
                 this.stateMachine.setState('climb');
             }
             return true;
@@ -699,6 +698,53 @@ export default class PlayerController {
         this.changeWeapon(weaponName);
     }
 
+    private startControllers(scene: Phaser.Scene) {
+        this.controller = new JoystickProvider(scene, 0);
+        this.keyboard = new KeyboardProvider(scene);
+        this.inputHandler = this.inputHandler = new InputHandler(scene, {
+            'A': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.K),
+                this.controller.getInput(GamepadInput.A)
+            ],
+            'left': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.A),
+                this.controller.getInput(GamepadInput.Left)
+            ],
+            'right': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.D),
+                this.controller.getInput(GamepadInput.Right),
+            ],
+            'up': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.W),
+                this.controller.getInput(GamepadInput.Up),
+            ],
+            'down': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.S),
+                this.controller.getInput(GamepadInput.Down),
+            ],
+            'X': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.L),
+                this.controller.getInput(GamepadInput.X)
+            ],
+            'R1': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.P),
+                this.controller.getInput(GamepadInput.RB)
+            ],
+            'Start': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.ENTER),
+                this.controller.getInput(GamepadInput.Start)
+            ]
+        });
+    }
+
+    public setSpritePosition(x: number, y: number): void {
+        this.sprite.setPosition(x, y);
+    }
+
+    public getSprite(): Phaser.Physics.Matter.Sprite {
+        return this.sprite;
+    }
+
     destroy() {
         this.destroyed = true;
 
@@ -715,22 +761,15 @@ export default class PlayerController {
         this.sprite.destroy();
     }
 
-    update(dt: number) {
+    update(time: number, dt: number) {
+        this.controller.update(time, dt);
+        this.keyboard.update(time, dt);
+
         if (this.destroyed) return;
         this.stateMachine.update(dt);
 
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.change_weapon)) {
-
+        if (this.inputHandler.isJustDown('R1')) {
             this.handleChangeCurrentWeapon();
         }
-
-    }
-
-    public setSpritePosition(x: number, y: number): void {
-        this.sprite.setPosition(x, y);
-    }
-
-    public getSprite(): Phaser.Physics.Matter.Sprite {
-        return this.sprite;
     }
 }

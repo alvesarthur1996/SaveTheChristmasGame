@@ -12,6 +12,8 @@ import GameTitle from './scenes/gameTitle';
 import OptionsMenu from './scenes/optionsMenu';
 import StageSelect from './scenes/stageSelect';
 import LoadingStage from './scenes/loading/loadingStage';
+import MergedInput from 'phaser3-merged-input';
+import TitleScreen from './scenes/titleScreen';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -21,20 +23,28 @@ const DEFAULT_WIDTH = 800
 const DEFAULT_HEIGHT = 600 // any height you want
 
 
-const pluginConfig = {
+const matterCollision = {
   plugin: PhaserMatterCollisionPlugin,
   key: "matterCollision" as "matterCollision",
   mapping: "matterCollision" as "matterCollision"
 };
 
+const mergedInput = {
+  plugin: MergedInput,
+  key: "mergedInput" as "mergedInput",
+  mapping: "mergedInput" as "mergedInput",
+};
+
 declare module "phaser" {
   interface Scene {
-    [pluginConfig.mapping]: PhaserMatterCollisionPlugin;
+    [matterCollision.mapping]: PhaserMatterCollisionPlugin;
+    [mergedInput.mapping]: MergedInput;
   }
   /* eslint-disable @typescript-eslint/no-namespace */
   namespace Scenes {
     interface Systems {
-      [pluginConfig.key]: PhaserMatterCollisionPlugin;
+      [matterCollision.key]: PhaserMatterCollisionPlugin;
+      [mergedInput.key]: MergedInput;
     }
   }
 }
@@ -45,8 +55,8 @@ const config: Phaser.Types.Core.GameConfig = {
   mode: Phaser.Scale.FIT,
   autoCenter: Phaser.Scale.CENTER_BOTH,
   input: {
+    keyboard: true,
     gamepad: true,
-    keyboard: true
   },
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
@@ -56,6 +66,7 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [
     LoadingScene,
+    TitleScreen,
     GameTitle,
     OptionsMenu,
     StageSelect,
@@ -67,7 +78,7 @@ const config: Phaser.Types.Core.GameConfig = {
     GameOverScene
   ],
   plugins: {
-    scene: [pluginConfig]
+    scene: [matterCollision]
   },
   physics: {
     default: 'matter',

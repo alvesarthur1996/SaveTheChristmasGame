@@ -49,7 +49,8 @@ export default class LoadingScene extends Phaser.Scene {
         this.add.image(0,0,'loading_img');
         // setTimeout(()=>{
             // this.scene.start(Stages.CandyLand);
-            this.scene.start(Stages.MainMenu);
+            // this.scene.start(Stages.MainMenu);
+            this.scene.start(Stages.TitleScreen);
         // }, 5000);
     }
 };

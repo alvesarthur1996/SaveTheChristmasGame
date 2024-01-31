@@ -10,7 +10,8 @@ export enum Stages {
     SelectStage = 'SelectStage',
     MainMenu = 'MainMenu',
     OptionsMenu = 'OptionsMenu',
-    LoadingStage = 'LoadingStage'
+    LoadingStage = 'LoadingStage',
+    TitleScreen = 'TitleScreen'
 }
 
 export enum BossNames {

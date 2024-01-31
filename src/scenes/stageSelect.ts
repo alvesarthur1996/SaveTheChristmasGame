@@ -1,9 +1,17 @@
+import InputHandler from "../controllers/joystick/InputHandler";
+import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystickProvider";
+import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Boss from "../utils/boss";
 import Stages, { BossNames } from "../utils/stages";
 
 export default class StageSelect extends Phaser.Scene {
     private buttons: Phaser.GameObjects.Text[] = [];
+    
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+    private controller!: JoystickProvider;
+    private keyboard!: KeyboardProvider;
+    private inputHandler!: InputHandler;
+
     private selectedButton: number = 0;
     private selector!: any;
     private bossContainer!: Phaser.GameObjects.Container;
@@ -21,7 +29,42 @@ export default class StageSelect extends Phaser.Scene {
     }
 
     init() {
-        this.cursors = this.input.keyboard!.createCursorKeys();
+        this.controller = new JoystickProvider(this, 0);
+        this.keyboard = new KeyboardProvider(this);
+        this.inputHandler = new InputHandler(this, {
+            'A': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.K),
+                this.controller.getInput(GamepadInput.A)
+            ],
+            'left': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.A),
+                this.controller.getInput(GamepadInput.Left)
+            ],
+            'right': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.D),
+                this.controller.getInput(GamepadInput.Right),
+            ],
+            'up': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.W),
+                this.controller.getInput(GamepadInput.Up),
+            ],
+            'down': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.S),
+                this.controller.getInput(GamepadInput.Down),
+            ],
+            'X': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.L),
+                this.controller.getInput(GamepadInput.X)
+            ],
+            'R1': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.P),
+                this.controller.getInput(GamepadInput.RB)
+            ],
+            'Start': [
+                this.keyboard.getInput(Phaser.Input.Keyboard.KeyCodes.ENTER),
+                this.controller.getInput(GamepadInput.Start)
+            ]
+        });
     }
 
     preload() {
@@ -153,26 +196,24 @@ export default class StageSelect extends Phaser.Scene {
         }
     }
 
-    update() {
-        const upJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.up!)
-        const downJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.down!)
-        const leftJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.left!)
-        const rightJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.right!)
-        const spaceJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.space!)
+    update(time: number, delta: number) {
+        this.controller.update(time, delta);
+        this.keyboard.update(time, delta);
 
-        if (upJustPressed) { 
+
+        if (this.inputHandler.isJustDown('up')) { 
             this.selectBoss(0, -1)
         }
-        else if (downJustPressed) { 
+        else if (this.inputHandler.isJustDown('down')) { 
             this.selectBoss(0, 1)
         }
-        else if (leftJustPressed) { 
+        else if (this.inputHandler.isJustDown('left')) { 
             this.selectBoss(-1, 0)
         }
-        else if (rightJustPressed) { 
+        else if (this.inputHandler.isJustDown('right')) { 
             this.selectBoss(1, 0)
         }
-        else if (spaceJustPressed) { 
+        else if (this.inputHandler.isJustDown('A') || this.inputHandler.isJustDown('Start')) { 
             this.confirmSelection()
         }
     }

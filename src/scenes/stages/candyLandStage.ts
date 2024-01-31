@@ -4,10 +4,8 @@ import EnemyController from "../../controllers/enemies/enemyController";
 import ObstaclesController from "../../controllers/obsctaclesController";
 import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
-import { GameUtils } from "../../utils/constant";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
-import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
 import { HealthChange } from "../../utils/events";
 
 export default class CandyLandStage extends Phaser.Scene {
@@ -82,7 +80,6 @@ export default class CandyLandStage extends Phaser.Scene {
             this.events.once('shutdown', () => {
                 this.bossController = undefined;
                 this.sound.removeAll();
-                // sound.destroy();
             });
 
         } catch (err) {
@@ -315,7 +312,7 @@ export default class CandyLandStage extends Phaser.Scene {
     };
 
     update(time: number, delta: number): void {
-        this.playerController?.update(delta);
+        this.playerController?.update(time, delta);
         this.bossController?.update(time, delta);
     }
 };

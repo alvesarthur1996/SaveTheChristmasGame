@@ -49,6 +49,8 @@ export const GameUtils: any =  {
         {key:'candies_factory', path: 'maps/candy_land/candies_factory.png'},
         {key:'candies_props', path: 'maps/candy_land/candies_props.png'},
         {key:'game_title', path: 'images/game_title.jpeg'},
+
+        {key:'avalon_logo', path: 'images/logos/logo.jpg'},
     ],
     Audios: [
         {key:'death', path: '/sounds/death.mp3'},
@@ -60,6 +62,7 @@ export const GameUtils: any =  {
         {key:'select_stage', path: '/sounds/select_stage.wav'},
         {key:'boss_fight', path: '/sounds/boss_fight.mp3'},
         {key:'main_menu', path: '/sounds/main_menu.wav'},
+        {key:'intro_menu', path: '/sounds/intro/br_theme.mp3'},
     ],
     Sprites: [
         {

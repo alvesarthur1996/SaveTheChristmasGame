@@ -59,7 +59,8 @@ export default class BossController {
                 world: this.scene.matter.world,
                 x: this.sprite.x,
                 y: this.sprite.y,
-                bodyOptions: {}
+                bodyOptions: {},
+                soundOptions: this.scene.SoundOptions
             });
             if (weapon) this.shoots.push(weapon);
         }

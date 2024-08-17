@@ -2,8 +2,9 @@ import InputHandler from "../controllers/joystick/InputHandler";
 import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystickProvider";
 import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Stages from "../utils/stages";
+import DefaultScene from "./defaultScene";
 
-export default class GameTitle extends Phaser.Scene {
+export default class GameTitle extends DefaultScene {
     private buttons: Phaser.GameObjects.Text[] = [];
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private selectedButton: number = 0;
@@ -21,6 +22,7 @@ export default class GameTitle extends Phaser.Scene {
     }
 
     init() {
+        this.load_options();
         this.controller = new JoystickProvider(this, 0);
         this.keyboard = new KeyboardProvider(this);
 
@@ -95,7 +97,7 @@ export default class GameTitle extends Phaser.Scene {
         this.add.rectangle(width / 2, height / 2, width, height, 0x000000).setOrigin(0.5);
         const bgm = this.sound.play('main_menu', {
             loop: true,
-            volume: 0.6
+            volume: (0.6 * (this.SoundOptions.BGM / 10))
         });
 
         let bg = this.add.image(width / 2, height / 3.4, 'game_title',).setScale(0.85);
@@ -182,15 +184,21 @@ export default class GameTitle extends Phaser.Scene {
         this.keyboard.update(time, delta);
 
         if (this.inputHandler.isJustDown('up') && !this.gameStarting) {
-            this.sound.play('cursor_move');
+            this.sound.play('cursor_move', {
+                volume: 1 * (this.SoundOptions.SFX / 10)
+            });
             this.selectNextButton(-1)
         }
         else if (this.inputHandler.isJustDown('down') && !this.gameStarting) {
-            this.sound.play('cursor_move');
+            this.sound.play('cursor_move', {
+                volume: 1 * (this.SoundOptions.SFX / 10)
+            });
             this.selectNextButton(1)
         }
         else if ((this.inputHandler.isJustDown('A') || this.inputHandler.isJustDown('Start')) && !this.gameStarting) {
-            this.sound.play('cursor_move');
+            this.sound.play('cursor_move', {
+                volume: 1 * (this.SoundOptions.SFX / 10)
+            });
             this.confirmSelection()
         }
     }

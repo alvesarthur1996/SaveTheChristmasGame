@@ -1,7 +1,8 @@
 import Boss, { BossAtlas } from "../../utils/boss";
 import Stages, { BossNames, LoadingStagesImages } from "../../utils/stages";
+import DefaultScene from "../defaultScene";
 
-export default class LoadingStage extends Phaser.Scene {
+export default class LoadingStage extends DefaultScene {
     private sceneToLoad!: Stages | string;
     private imageFromStage!: LoadingStagesImages | string;
     private bossName!: BossNames | string;
@@ -66,7 +67,7 @@ export default class LoadingStage extends Phaser.Scene {
                     duration: 1200,
                     x: bossShow.width / 2,
                     y: bossShow.y,
-                    onActive: () => { this.bossSprite.setDepth(10); this.sound.play('boss_splash') },
+                    onActive: () => { this.bossSprite.setDepth(10); this.sound.play('boss_splash', { volume: 1 * (this.SoundOptions.BGM / 10) })},
                     onComplete: () => { this.bossSprite.play('intro') }
                 },
                 {

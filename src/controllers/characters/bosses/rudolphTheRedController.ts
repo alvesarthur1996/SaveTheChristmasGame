@@ -1,4 +1,5 @@
 import IBoss from "../../../contracts/boss";
+import DefaultScene from "../../../scenes/defaultScene";
 import { sharedInstance as events } from "../../../scenes/eventCentre";
 import Boss, { BossAtlas, BossWeapon } from "../../../utils/boss";
 import { callWeaponClassDinamically } from "../../../utils/functions";
@@ -10,7 +11,7 @@ import { CollisionSensors, TouchingDetection } from "../playerController";
 
 export default class RudolphTheRedController implements IBoss {
     private stateMachine: StateMachine;
-    private scene: Phaser.Scene
+    private scene: DefaultScene
     private player: Phaser.Physics.Matter.Sprite;
     private sprite!: Phaser.Physics.Matter.Sprite;
     private baseHealth = 28;
@@ -20,7 +21,7 @@ export default class RudolphTheRedController implements IBoss {
     private isTouching!: TouchingDetection;
     public spawnPosition = { x: 0, y: 0 };
     public static shootDamage = 2;
-    public static meleeDamage = 5;
+    public static meleeDamage = 4;
     private actionTime = 0;
     private currentAction!: string;
     private destroyed = false;
@@ -35,7 +36,7 @@ export default class RudolphTheRedController implements IBoss {
 
 
 
-    constructor(scene: Phaser.Scene, player: Phaser.Physics.Matter.Sprite) {
+    constructor(scene: DefaultScene, player: Phaser.Physics.Matter.Sprite) {
         // super(scene, player);
         this.player = player;
         this.scene = scene;
@@ -85,7 +86,7 @@ export default class RudolphTheRedController implements IBoss {
         this.scene.events.on("update", this.update, this);
         this.scene.events.once("shutdown", this.destroy, this);
         this.scene.events.once("destroy", this.destroy, this);
-
+        
         this.weaponList.push(BossWeapon.LaserBeam);
         this.changeWeapon(BossWeapon.LaserBeam);
     }
@@ -130,7 +131,7 @@ export default class RudolphTheRedController implements IBoss {
         this.sprite.play('move');
     }
     private moveOnUpdate() {
-        const speed = 4.35;
+        const speed = 3.75;
         !this.sprite.flipX ? this.sprite.setVelocityX(-speed) : this.sprite.setVelocityX(speed);
         if (this.isTouching.left || this.isTouching.right) {
             this.sprite.flipX = !this.sprite.flipX;
@@ -165,7 +166,7 @@ export default class RudolphTheRedController implements IBoss {
         });
     }
     private deathOnEnter() {
-        this.scene.sound.play('death');
+        this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) });
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
         this.destroy()
     }
@@ -240,6 +241,7 @@ export default class RudolphTheRedController implements IBoss {
     public setSpritePosition(x: number, y: number): void {
         this.sprite.setPosition(x, y);
     }
+
     private changeWeapon(weapon: BossWeapon) {
         if (this.weaponList.filter(i => i == weapon).length)
             this.currentWeapon = weapon;
@@ -250,7 +252,8 @@ export default class RudolphTheRedController implements IBoss {
                 world: this.scene.matter.world,
                 x: this.sprite.x,
                 y: this.sprite.y,
-                bodyOptions: {}
+                bodyOptions: {},
+                soundOptions: this.scene.SoundOptions
             });
             if (weapon) this.shoots.push(weapon);
         }

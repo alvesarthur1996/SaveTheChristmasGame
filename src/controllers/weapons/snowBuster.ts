@@ -1,3 +1,4 @@
+import { SoundOptions } from "../../utils/options";
 import { Weapons } from "../../utils/weapons";
 import BulletShoot from "../bulletShoot";
 
@@ -7,9 +8,10 @@ export default class SnowBuster extends BulletShoot {
         x: number,
         y: number,
         texture: Phaser.Textures.Texture | string,
-        bodyOptions: Phaser.Types.Physics.Matter.MatterBodyConfig
+        bodyOptions: Phaser.Types.Physics.Matter.MatterBodyConfig,
+        soundOptions: SoundOptions
     ) {
-        super(world, x, y, texture, bodyOptions);
+        super(world, x, y, texture, bodyOptions, soundOptions);
         this.setIgnoreGravity(true);
         this.setScale(0.25);
         this.setFriction(0);

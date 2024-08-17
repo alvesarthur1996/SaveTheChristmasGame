@@ -1,15 +1,19 @@
+import { SoundOptions } from "../utils/options";
+
 export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
     public lifespan: number = 0;
     public damage = 1;
     public speed = 4;
     public consume = 1;
+    protected soundOptions: SoundOptions;
 
     constructor(
         world: Phaser.Physics.Matter.World,
         x: number,
         y: number,
         texture: Phaser.Textures.Texture | string,
-        bodyOptions: Phaser.Types.Physics.Matter.MatterBodyConfig
+        bodyOptions: Phaser.Types.Physics.Matter.MatterBodyConfig,
+        soundOptions: SoundOptions
     ) {
         super(world, x, y, texture, undefined, { plugin: bodyOptions });
         this.setFrictionAir(0);
@@ -26,6 +30,7 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
             callback: this.onCollideCallback,
             context: this
         });
+        this.soundOptions = soundOptions;
     }
 
     protected onCollideCallback({ bodyA, bodyB, pair }) {
@@ -49,7 +54,7 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
 
     fire(charSprite: Phaser.Physics.Matter.Sprite) {
         this.scene.sound.play('snow_buster', {
-            volume: 0.3
+            volume: (0.3 * (this.soundOptions.SFX / 10))
         });
         this.play('shoot');
         this.world.add([this.body]);

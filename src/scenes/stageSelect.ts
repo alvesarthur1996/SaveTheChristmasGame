@@ -3,10 +3,11 @@ import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystick
 import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Boss from "../utils/boss";
 import Stages, { BossNames } from "../utils/stages";
+import DefaultScene from "./defaultScene";
 
-export default class StageSelect extends Phaser.Scene {
+export default class StageSelect extends DefaultScene {
     private buttons: Phaser.GameObjects.Text[] = [];
-    
+
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private controller!: JoystickProvider;
     private keyboard!: KeyboardProvider;
@@ -29,6 +30,7 @@ export default class StageSelect extends Phaser.Scene {
     }
 
     init() {
+        this.load_options();
         this.controller = new JoystickProvider(this, 0);
         this.keyboard = new KeyboardProvider(this);
         this.inputHandler = new InputHandler(this, {
@@ -91,7 +93,7 @@ export default class StageSelect extends Phaser.Scene {
     create() {
         this.sound.play('select_stage', {
             loop: true,
-            volume: 0.45,
+            volume: 0.45 * (this.SoundOptions.BGM / 10),
         });
 
         const { width, height } = this.scale;
@@ -155,7 +157,7 @@ export default class StageSelect extends Phaser.Scene {
     }
 
     private selectBoss(deltaX: number, deltaY: number) {
-        this.sound.play('cursor_move');
+        this.sound.play('cursor_move', { volume: 1 * (this.SoundOptions.SFX / 10) });
         this.selectedBossIndex.x = Phaser.Math.Clamp(this.selectedBossIndex.x + deltaX, 0, this.bossOptions[0].length - 1);
         this.selectedBossIndex.y = Phaser.Math.Clamp(this.selectedBossIndex.y + deltaY, 0, this.bossOptions.length - 1);
 
@@ -201,19 +203,19 @@ export default class StageSelect extends Phaser.Scene {
         this.keyboard.update(time, delta);
 
 
-        if (this.inputHandler.isJustDown('up')) { 
+        if (this.inputHandler.isJustDown('up')) {
             this.selectBoss(0, -1)
         }
-        else if (this.inputHandler.isJustDown('down')) { 
+        else if (this.inputHandler.isJustDown('down')) {
             this.selectBoss(0, 1)
         }
-        else if (this.inputHandler.isJustDown('left')) { 
+        else if (this.inputHandler.isJustDown('left')) {
             this.selectBoss(-1, 0)
         }
-        else if (this.inputHandler.isJustDown('right')) { 
+        else if (this.inputHandler.isJustDown('right')) {
             this.selectBoss(1, 0)
         }
-        else if (this.inputHandler.isJustDown('A') || this.inputHandler.isJustDown('Start')) { 
+        else if (this.inputHandler.isJustDown('A') || this.inputHandler.isJustDown('Start')) {
             this.confirmSelection()
         }
     }

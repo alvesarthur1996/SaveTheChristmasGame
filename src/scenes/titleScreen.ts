@@ -2,8 +2,9 @@ import InputHandler from "../controllers/joystick/InputHandler";
 import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystickProvider";
 import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Stages from "../utils/stages";
+import DefaultScene from "./defaultScene";
 
-export default class TitleScreen extends Phaser.Scene {
+export default class TitleScreen extends DefaultScene {
     private buttons: Phaser.GameObjects.Text[] = [];
     private selector!: any;
     private selectedButton: number = 0;
@@ -18,6 +19,7 @@ export default class TitleScreen extends Phaser.Scene {
     }
 
     init() {
+        this.load_options();
         this.controller = new JoystickProvider(this, 0);
         this.keyboard = new KeyboardProvider(this);
 
@@ -58,16 +60,16 @@ export default class TitleScreen extends Phaser.Scene {
     }
 
     preload() {
-
+        this.sound.play('intro_menu', {
+            loop: true,
+            volume: 0.45 * (this.SoundOptions.BGM / 10),
+        });
     }
 
     create() {
         const { width, height } = this.scale;
         this.add.rectangle(width / 2, height / 2, width, height, 0x000000).setOrigin(0.5);
-        // const bgm = this.sound.play('main_menu', {
-        //     loop: true,
-        //     volume: 0.6
-        // });
+
 
         let bg = this.add.image(width / 2, height / 3.4, 'game_title',).setScale(0.85);
         bg.postFX.addVignette(0.5, 0.675, 0.3);
@@ -113,6 +115,8 @@ export default class TitleScreen extends Phaser.Scene {
 
         if (this.inputHandler.isJustDown('A') || this.inputHandler.isJustDown('Start')) {
             this.scene.start(Stages.MainMenu);
+            let sound = this.scene.scene.sound.get('intro_menu');
+            sound.destroy();
         }
     }
 };

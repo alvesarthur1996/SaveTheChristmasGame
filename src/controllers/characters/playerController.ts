@@ -15,6 +15,7 @@ import RudolphTheRedController from './bosses/rudolphTheRedController';
 import JoystickProvider, { GamepadInput } from '../joystick/joystickProvider';
 import KeyboardProvider from '../joystick/keyboardProvider';
 import InputHandler from '../joystick/InputHandler';
+import DefaultScene from '../../scenes/defaultScene';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -39,7 +40,7 @@ export type CollisionSensors = {
 }
 
 export default class PlayerController {
-    private scene: Phaser.Scene;
+    private scene: DefaultScene;
     private sprite!: Phaser.Physics.Matter.Sprite;
     private sensors!: CollisionSensors
     private obstacles: ObstaclesController;
@@ -57,7 +58,7 @@ export default class PlayerController {
     private invencibility = false;
     public spawnPosition = { x: 0, y: 0 };
     private lifeCounter = 3;
-    
+
     private weaponList: Map<Weapons, number | null> = new Map();
     private currentWeapon: Weapons = Weapons.SnowBuster;
     private currentWeaponEnergy: null | number = null;
@@ -66,7 +67,7 @@ export default class PlayerController {
     private lastEnemy?: Phaser.Physics.Matter.Sprite
     private lastEnemyDamage?: number;
 
-    constructor(scene: Scene, obstacles: ObstaclesController, interactions: InteractionsController) {
+    constructor(scene: DefaultScene, obstacles: ObstaclesController, interactions: InteractionsController) {
         this.scene = scene;
         this.obstacles = obstacles;
         this.interactions = interactions;
@@ -404,7 +405,7 @@ export default class PlayerController {
 
     private deathOnEnter() {
         this.sprite.play('death');
-        this.scene.sound.play('death')
+        this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) })
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
 
         events.emit(GameEvents.LifeLoss);
@@ -677,7 +678,8 @@ export default class PlayerController {
                 world: this.scene.matter.world,
                 x: this.sprite.x,
                 y: this.sprite.y,
-                bodyOptions: {}
+                bodyOptions: {},
+                soundOptions: this.scene.SoundOptions
             });
             if (weapon) this.shoots.push(weapon);
         }

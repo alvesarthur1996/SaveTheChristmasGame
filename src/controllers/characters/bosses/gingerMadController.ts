@@ -1,4 +1,5 @@
 import IBoss from "../../../contracts/boss";
+import DefaultScene from "../../../scenes/defaultScene";
 import { sharedInstance as events } from "../../../scenes/eventCentre";
 import Boss, { BossWeapon } from "../../../utils/boss";
 import { callWeaponClassDinamically } from "../../../utils/functions";
@@ -9,7 +10,7 @@ import { CollisionSensors, TouchingDetection } from "../playerController";
 
 export default class GingerMadController implements IBoss{
     private stateMachine: StateMachine;
-    private scene: Phaser.Scene
+    private scene: DefaultScene
     private player: Phaser.Physics.Matter.Sprite;
     private sprite!: Phaser.Physics.Matter.Sprite;
     private baseHealth = 28;
@@ -34,7 +35,7 @@ export default class GingerMadController implements IBoss{
 
 
 
-    constructor(scene: Phaser.Scene, player: Phaser.Physics.Matter.Sprite) {
+    constructor(scene: DefaultScene, player: Phaser.Physics.Matter.Sprite) {
         // super(scene, player);
         this.player = player;
         this.scene = scene;
@@ -164,7 +165,7 @@ export default class GingerMadController implements IBoss{
         });
     }
     private deathOnEnter() {
-        this.scene.sound.play('death');
+        this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) });
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
         this.destroy()
     }
@@ -257,7 +258,8 @@ export default class GingerMadController implements IBoss{
                 world: this.scene.matter.world,
                 x: this.sprite.x,
                 y: this.sprite.y,
-                bodyOptions: {}
+                bodyOptions: {},
+                soundOptions: this.scene.SoundOptions
             });
             if (weapon) this.shoots.push(weapon);
         }

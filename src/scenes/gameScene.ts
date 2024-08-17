@@ -4,7 +4,7 @@ import MetController from "../controllers/enemies/metController";
 import EnemyController from "../controllers/enemies/enemyController";
 import { HealthChange } from "../utils/events";
 
-export default class GameScene extends Phaser.Scene {
+export default class GameScene extends DefaultScene {
     private playerController?: PlayerController;
     private obstacles!: ObstaclesController;
     private enemies!: Array<EnemyController>;

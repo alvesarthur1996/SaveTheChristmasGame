@@ -7,8 +7,10 @@ import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
 import { HealthChange } from "../../utils/events";
+import DefaultScene from "../defaultScene";
+import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
 
-export default class CandyLandStage extends Phaser.Scene {
+export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
     private bossController: any;
     private obstacles!: ObstaclesController;
@@ -35,7 +37,7 @@ export default class CandyLandStage extends Phaser.Scene {
     }
 
     create() {
-        this.sound.play('candy_land_stage', { loop: true, volume: 0.45 });
+        this.sound.play('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
         let sound = this.sound.get('candy_land_stage');
         try {
             const map = this.mountMap();
@@ -73,7 +75,7 @@ export default class CandyLandStage extends Phaser.Scene {
             // events.once('boss_arrived', () => {
             events.once('room_boss_camera_trigger', () => {
                 sound.destroy();
-                this.sound.play('boss_fight', { loop: true, volume: 0.45 });
+                this.sound.play('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
                 sound = this.sound.get('boss_fight');
             });
 
@@ -203,8 +205,8 @@ export default class CandyLandStage extends Phaser.Scene {
 
                         setTimeout(() => {
                             if (this.bossController) return;
-                            let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
-                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
+                            // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
+                            let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
                             events.emit('boss_arrived', 28)

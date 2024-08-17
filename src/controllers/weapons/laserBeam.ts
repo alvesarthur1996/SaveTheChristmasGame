@@ -1,3 +1,4 @@
+import { SoundOptions } from "../../utils/options";
 import { Weapons, WeaponsAtlas } from "../../utils/weapons";
 import BulletShoot from "../bulletShoot";
 
@@ -7,18 +8,19 @@ export default class LaserBeam extends BulletShoot {
         x: number,
         y: number,
         texture: Phaser.Textures.Texture | string,
-        bodyOptions: Phaser.Types.Physics.Matter.MatterBodyConfig
+        bodyOptions: Phaser.Types.Physics.Matter.MatterBodyConfig,
+        soundOptions: SoundOptions
     ) {
-        super(world, x, y, texture, bodyOptions);
+        super(world, x, y, texture, bodyOptions, soundOptions);
         this.setIgnoreGravity(true);
         this.setScale(0.7);
         this.setFriction(0);
         this.setFixedRotation()
         this.setName(Weapons.LaserBeam);
         this.damage = 2;
-        this.speed = 5.1;
+        this.speed = 4.25;
         this.consume = 2;
-        
+
         this.anims.create({
             key: 'shoot',
             frames: this.anims.generateFrameNames(WeaponsAtlas.LaserBeam, {
@@ -33,7 +35,7 @@ export default class LaserBeam extends BulletShoot {
     fire(charSprite: Phaser.Physics.Matter.Sprite, flipped: boolean = false) {
         this.play('shoot');
         this.scene.sound.play('laser_beam', {
-            volume: 0.3
+            volume: (0.3 *(this.soundOptions.SFX / 10))
         });
         this.world.add([this.body]);
         if (flipped)

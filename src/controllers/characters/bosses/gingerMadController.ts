@@ -326,7 +326,7 @@ export default class GingerMadController implements IBoss{
         //     this.sprite.flipX = true;
 
 
-        let random = Math.ceil(Math.random() * 80);
+        let random = Phaser.Math.RND.between(0, 80);
         if (random >= 0 && random < 45) {
             this.currentAction = 'move';
         } else if (random >= 45 && random < 60) {

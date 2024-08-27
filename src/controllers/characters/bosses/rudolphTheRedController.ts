@@ -86,7 +86,7 @@ export default class RudolphTheRedController implements IBoss {
         this.scene.events.on("update", this.update, this);
         this.scene.events.once("shutdown", this.destroy, this);
         this.scene.events.once("destroy", this.destroy, this);
-        
+
         this.weaponList.push(BossWeapon.LaserBeam);
         this.changeWeapon(BossWeapon.LaserBeam);
     }
@@ -131,7 +131,7 @@ export default class RudolphTheRedController implements IBoss {
         this.sprite.play('move');
     }
     private moveOnUpdate() {
-        const speed = 3.75;
+        const speed = 3.25;
         !this.sprite.flipX ? this.sprite.setVelocityX(-speed) : this.sprite.setVelocityX(speed);
         if (this.isTouching.left || this.isTouching.right) {
             this.sprite.flipX = !this.sprite.flipX;
@@ -321,18 +321,21 @@ export default class RudolphTheRedController implements IBoss {
 
         this.actionTime += delta;
 
-        if (this.actionTime >= 2000)
+        if (this.actionTime >= 2250)
             this.actionTime = 0;
         if (this.actionTime > 0) return;
 
 
-        let random = Math.ceil(Math.random() * 80);
+        let random = Phaser.Math.RND.between(0, 80);
         if (random >= 0 && random < 45) {
             this.currentAction = 'move';
         } else if (random >= 45 && random < 60) {
             this.currentAction = 'idle';
         } else if ((random >= 60 && random < 100)) {
-            this.currentAction = 'shoot';
+            if (!this.stateMachine.isCurrentState('shoot'))
+                this.currentAction = 'shoot';
+            else
+                this.currentAction = 'idle';
         }
         this.stateMachine.setState(this.currentAction);
     }

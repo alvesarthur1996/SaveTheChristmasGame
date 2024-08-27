@@ -1,0 +1,776 @@
+{
+	"textures": [
+		{
+			"image": "yeti.png",
+			"format": "RGBA8888",
+			"size": {
+				"w": 187,
+				"h": 128
+			},
+			"scale": 1,
+			"frames": [
+				{
+					"filename": "yeti_death-1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 26,
+						"h": 31
+					},
+					"frame": {
+						"x": 0,
+						"y": 0,
+						"w": 26,
+						"h": 31
+					}
+				},
+				{
+					"filename": "yeti_attack-2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 4,
+						"w": 28,
+						"h": 28
+					},
+					"frame": {
+						"x": 0,
+						"y": 31,
+						"w": 28,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_attack-4",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 4,
+						"w": 27,
+						"h": 28
+					},
+					"frame": {
+						"x": 26,
+						"y": 0,
+						"w": 27,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_attack-3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 4,
+						"w": 25,
+						"h": 28
+					},
+					"frame": {
+						"x": 0,
+						"y": 59,
+						"w": 25,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_death-0",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 3,
+						"w": 24,
+						"h": 29
+					},
+					"frame": {
+						"x": 0,
+						"y": 87,
+						"w": 24,
+						"h": 29
+					}
+				},
+				{
+					"filename": "yeti_death-3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 20,
+						"w": 31,
+						"h": 12
+					},
+					"frame": {
+						"x": 0,
+						"y": 116,
+						"w": 31,
+						"h": 12
+					}
+				},
+				{
+					"filename": "yeti_jump-5",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 3,
+						"w": 24,
+						"h": 29
+					},
+					"frame": {
+						"x": 24,
+						"y": 87,
+						"w": 24,
+						"h": 29
+					}
+				},
+				{
+					"filename": "yeti_death-7",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 15,
+						"w": 32,
+						"h": 8
+					},
+					"frame": {
+						"x": 31,
+						"y": 116,
+						"w": 32,
+						"h": 8
+					}
+				},
+				{
+					"filename": "yeti_idle-3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 5,
+						"w": 24,
+						"h": 27
+					},
+					"frame": {
+						"x": 25,
+						"y": 59,
+						"w": 24,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_jump-4",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 1,
+						"w": 23,
+						"h": 29
+					},
+					"frame": {
+						"x": 48,
+						"y": 86,
+						"w": 23,
+						"h": 29
+					}
+				},
+				{
+					"filename": "yeti_death-4",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 19,
+						"w": 32,
+						"h": 13
+					},
+					"frame": {
+						"x": 63,
+						"y": 115,
+						"w": 32,
+						"h": 13
+					}
+				},
+				{
+					"filename": "yeti_jump-3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 3,
+						"y": 1,
+						"w": 22,
+						"h": 31
+					},
+					"frame": {
+						"x": 28,
+						"y": 28,
+						"w": 22,
+						"h": 31
+					}
+				},
+				{
+					"filename": "yeti_jump-2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 7,
+						"w": 25,
+						"h": 25
+					},
+					"frame": {
+						"x": 49,
+						"y": 59,
+						"w": 25,
+						"h": 25
+					}
+				},
+				{
+					"filename": "yeti_attack-5",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 4,
+						"w": 23,
+						"h": 28
+					},
+					"frame": {
+						"x": 71,
+						"y": 84,
+						"w": 23,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_idle-2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 4,
+						"w": 23,
+						"h": 28
+					},
+					"frame": {
+						"x": 50,
+						"y": 28,
+						"w": 23,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_throw-3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 4,
+						"w": 23,
+						"h": 28
+					},
+					"frame": {
+						"x": 53,
+						"y": 0,
+						"w": 23,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_jump-6",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 7,
+						"w": 25,
+						"h": 25
+					},
+					"frame": {
+						"x": 73,
+						"y": 28,
+						"w": 25,
+						"h": 25
+					}
+				},
+				{
+					"filename": "yeti_throw-1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 6,
+						"w": 24,
+						"h": 26
+					},
+					"frame": {
+						"x": 76,
+						"y": 0,
+						"w": 24,
+						"h": 26
+					}
+				},
+				{
+					"filename": "yeti_attack-0",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 5,
+						"w": 23,
+						"h": 27
+					},
+					"frame": {
+						"x": 74,
+						"y": 53,
+						"w": 23,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_idle-0",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 5,
+						"w": 23,
+						"h": 27
+					},
+					"frame": {
+						"x": 94,
+						"y": 80,
+						"w": 23,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_death-2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 11,
+						"w": 28,
+						"h": 21
+					},
+					"frame": {
+						"x": 95,
+						"y": 107,
+						"w": 28,
+						"h": 21
+					}
+				},
+				{
+					"filename": "yeti_jump-0",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 5,
+						"w": 23,
+						"h": 27
+					},
+					"frame": {
+						"x": 97,
+						"y": 53,
+						"w": 23,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_run-1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 5,
+						"w": 23,
+						"h": 27
+					},
+					"frame": {
+						"x": 117,
+						"y": 80,
+						"w": 23,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_death-6",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 16,
+						"w": 32,
+						"h": 16
+					},
+					"frame": {
+						"x": 123,
+						"y": 107,
+						"w": 32,
+						"h": 16
+					}
+				},
+				{
+					"filename": "yeti_run-4",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 5,
+						"w": 23,
+						"h": 27
+					},
+					"frame": {
+						"x": 98,
+						"y": 26,
+						"w": 23,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_throw-0",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 5,
+						"w": 23,
+						"h": 27
+					},
+					"frame": {
+						"x": 120,
+						"y": 53,
+						"w": 23,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_jump-1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 2,
+						"y": 7,
+						"w": 24,
+						"h": 25
+					},
+					"frame": {
+						"x": 140,
+						"y": 80,
+						"w": 24,
+						"h": 25
+					}
+				},
+				{
+					"filename": "yeti_death-5",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 18,
+						"w": 32,
+						"h": 14
+					},
+					"frame": {
+						"x": 155,
+						"y": 105,
+						"w": 32,
+						"h": 14
+					}
+				},
+				{
+					"filename": "yeti_attack-1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 1,
+						"y": 7,
+						"w": 23,
+						"h": 25
+					},
+					"frame": {
+						"x": 100,
+						"y": 0,
+						"w": 23,
+						"h": 25
+					}
+				},
+				{
+					"filename": "yeti_idle-1",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 3,
+						"y": 4,
+						"w": 22,
+						"h": 28
+					},
+					"frame": {
+						"x": 121,
+						"y": 25,
+						"w": 22,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_run-2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 7,
+						"w": 23,
+						"h": 25
+					},
+					"frame": {
+						"x": 123,
+						"y": 0,
+						"w": 23,
+						"h": 25
+					}
+				},
+				{
+					"filename": "yeti_throw-2",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 4,
+						"w": 22,
+						"h": 28
+					},
+					"frame": {
+						"x": 143,
+						"y": 25,
+						"w": 22,
+						"h": 28
+					}
+				},
+				{
+					"filename": "yeti_run-5",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 4,
+						"y": 7,
+						"w": 23,
+						"h": 25
+					},
+					"frame": {
+						"x": 146,
+						"y": 0,
+						"w": 23,
+						"h": 25
+					}
+				},
+				{
+					"filename": "yeti_jump-7",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 3,
+						"y": 5,
+						"w": 22,
+						"h": 27
+					},
+					"frame": {
+						"x": 143,
+						"y": 53,
+						"w": 22,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_run-0",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 5,
+						"y": 5,
+						"w": 22,
+						"h": 27
+					},
+					"frame": {
+						"x": 165,
+						"y": 25,
+						"w": 22,
+						"h": 27
+					}
+				},
+				{
+					"filename": "yeti_run-3",
+					"rotated": false,
+					"trimmed": true,
+					"sourceSize": {
+						"w": 32,
+						"h": 32
+					},
+					"spriteSourceSize": {
+						"x": 5,
+						"y": 5,
+						"w": 22,
+						"h": 27
+					},
+					"frame": {
+						"x": 165,
+						"y": 52,
+						"w": 22,
+						"h": 27
+					}
+				}
+			]
+		}
+	],
+	"meta": {
+		"app": "https://www.codeandweb.com/texturepacker",
+		"version": "3.0",
+		"smartupdate": "$TexturePacker:SmartUpdate:dd5402123272e6bd20e548fe88f53333:1d938f0fa398add0ef4b715be5b75d72:5550ea94bea9ce9f17de0a2f2002f036$"
+	}
+}

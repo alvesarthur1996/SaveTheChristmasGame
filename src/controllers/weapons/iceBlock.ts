@@ -1,3 +1,4 @@
+import Boss from "../../utils/boss";
 import { SoundOptions } from "../../utils/options";
 import { Weapons, WeaponsAtlas } from "../../utils/weapons";
 import BulletShoot from "../bulletShoot";
@@ -45,6 +46,8 @@ export default class IceBlock extends BulletShoot {
         if (bodyB.gameObject && bodyB.gameObject.name == 'player')
             return;
 
+        if(bodyB?.gameObject.name == Boss.Yeti)
+            return;
 
         if (bodyB?.gameObject) {
             const type = bodyB?.gameObject.getData('type') ?? null;

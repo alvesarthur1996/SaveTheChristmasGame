@@ -62,12 +62,15 @@ export default class LoadingScene extends Phaser.Scene {
 
         this.cameras.main.fadeIn(1000, 0, 0, 0);
         console.log(this.cache.json.exists('config'));
-        // setTimeout(() => {
-        //     this.cameras.main.fadeOut(1000, 0, 0, 0, (camera: any, progress: any) => {
-        //         if (progress === 1) {
-        this.scene.start(Stages.TitleScreen);
-        // }
-        // });
-        // }, 5000);
+        // this.scene.start(Stages.ColdMountains);
+        
+        setTimeout(() => {
+            this.cameras.main.fadeOut(1000, 0, 0, 0, (camera: any, progress: any) => {
+                if (progress === 1) {
+                    // this.scene.start(Stages.SelectStage);
+                    this.scene.start(Stages.TitleScreen);
+                }
+            });
+        }, 5000);
     }
 };

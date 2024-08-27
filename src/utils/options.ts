@@ -15,25 +15,14 @@ export async function loadOptions() {
     return response;
 }
 
-export function saveOptions(json: object) {
-    console.log(json);
-    fetch('http://localhost:8080/save-options', {
+export async function saveOptions(json: object) {
+    const request = await fetch('http://localhost:8080/save-options', {
         headers: {
             'Content-Type': 'application/json' // Especifica que o corpo da solicitação é JSON
         },
         method: 'POST',
         body: JSON.stringify(json)
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Success:', data);
-        })
-        .catch(error => {
-            console.error('There was a problem with your fetch operation:', error);
-        });
+    });
+    const response = await request.json();
+    return response;
 }

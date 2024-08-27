@@ -11,13 +11,15 @@ enum Boss {
 
 export enum BossWeapon {
     CandyBoomerang= 'CandyBoomerang',
-    LaserBeam = 'LaserBeam'
+    LaserBeam = 'LaserBeam',
+    IceBlock = 'IceBlock',
 }
 
 
 export enum BossAtlas {
     GingerMad = 'gingermad_atlas',
     RudolphTheRed = 'rudolph_the_red_atlas',
+    Yeti = 'yeti_atlas',
 }
 
 export default Boss;

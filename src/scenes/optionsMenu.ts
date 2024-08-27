@@ -61,7 +61,7 @@ export default class OptionsMenu extends DefaultScene {
     }
 
     preload() {
-        
+
     }
 
     private selectButton(index: number) {
@@ -130,8 +130,10 @@ export default class OptionsMenu extends DefaultScene {
 
             this.scene.pause(Stages.OptionsMenu);
             this.scene.bringToTop(Stages.MainMenu);
-            saveOptions(this.options);
-            events.emit('options_changes_confirmed');
+            saveOptions(this.options)
+                .then(() => {
+                    events.emit('options_changes_confirmed');
+                });
         });
 
         this.buttons.push(returnBtn);

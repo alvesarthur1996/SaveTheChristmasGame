@@ -12,6 +12,7 @@ import OptionsMenu from './scenes/optionsMenu';
 import StageSelect from './scenes/stageSelect';
 import LoadingStage from './scenes/loading/loadingStage';
 import TitleScreen from './scenes/titleScreen';
+import ColdMountainsStage from './scenes/stages/coldMountains';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -64,6 +65,7 @@ const config: Phaser.Types.Core.GameConfig = {
     LoadingStage,
     CandyLandStage,
     MadFactoryStage,
+    ColdMountainsStage,
     GameController,
     UI,
     GameOverScene

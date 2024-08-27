@@ -4,6 +4,7 @@ import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Boss from "../utils/boss";
 import Stages, { BossNames } from "../utils/stages";
 import DefaultScene from "./defaultScene";
+import { sharedInstance as events } from "./eventCentre";
 
 export default class StageSelect extends DefaultScene {
     private buttons: Phaser.GameObjects.Text[] = [];
@@ -91,9 +92,15 @@ export default class StageSelect extends DefaultScene {
     }
 
     create() {
-        this.sound.play('select_stage', {
+        const bgm = this.sound.add('select_stage', {
             loop: true,
             volume: 0.45 * (this.SoundOptions.BGM / 10),
+        });
+        bgm.play();
+
+        events.on('sound_options_changed', () => {
+            if (bgm.isPlaying)
+                bgm.setVolume(0.8 * (this.SoundOptions.BGM / 10));
         });
 
         const { width, height } = this.scale;

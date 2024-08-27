@@ -3,6 +3,7 @@ import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystick
 import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Stages from "../utils/stages";
 import DefaultScene from "./defaultScene";
+import { sharedInstance as events } from "./eventCentre";
 
 export default class TitleScreen extends DefaultScene {
     private buttons: Phaser.GameObjects.Text[] = [];
@@ -60,10 +61,15 @@ export default class TitleScreen extends DefaultScene {
     }
 
     preload() {
-        this.sound.play('intro_menu', {
+        const bgm = this.sound.add('intro_menu', {
             loop: true,
-            volume: 0.45 * (this.SoundOptions.BGM / 10),
+            volume: 1 * (this.SoundOptions.BGM / 10),
         });
+        bgm.play();
+        events.on('sound_options_changed', () => {
+            if (bgm.isPlaying)
+                bgm.setVolume(1 * (this.SoundOptions.BGM / 10));
+        })
     }
 
     create() {

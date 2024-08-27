@@ -1,6 +1,7 @@
 import Boss, { BossAtlas } from "../../utils/boss";
 import Stages, { BossNames, LoadingStagesImages } from "../../utils/stages";
 import DefaultScene from "../defaultScene";
+import { sharedInstance as events } from "../eventCentre";
 
 export default class LoadingStage extends DefaultScene {
     private sceneToLoad!: Stages | string;
@@ -67,7 +68,15 @@ export default class LoadingStage extends DefaultScene {
                     duration: 1200,
                     x: bossShow.width / 2,
                     y: bossShow.y,
-                    onActive: () => { this.bossSprite.setDepth(10); this.sound.play('boss_splash', { volume: 1 * (this.SoundOptions.BGM / 10) })},
+                    onActive: () => {
+                        this.bossSprite.setDepth(10);
+                        const bgm = this.sound.add('boss_splash', { volume: 1 * (this.SoundOptions.BGM / 10) });
+                        bgm.play();
+                        events.on('sound_options_changed', () => {
+                            if (bgm.isPlaying)
+                                bgm.setVolume(1 * (this.SoundOptions.BGM / 10));
+                        });
+                    },
                     onComplete: () => { this.bossSprite.play('intro') }
                 },
                 {
@@ -128,6 +137,32 @@ export default class LoadingStage extends DefaultScene {
                         end: 11,
                     }),
                     frameRate: 18,
+                    repeat: 3
+                });
+                break;
+            case BossNames.WinterForest:
+                this.bossSprite = this.add.sprite(this.scale.width * 2, this.scale.height / 2, BossAtlas.RudolphTheRed);
+                this.bossSprite.anims.create({
+                    key: 'intro',
+                    frames: this.bossSprite.anims.generateFrameNames(BossAtlas.RudolphTheRed, {
+                        prefix: 'idle_',
+                        start: 0,
+                        end: 11,
+                    }),
+                    frameRate: 18,
+                    repeat: 3
+                });
+                break;
+            case BossNames.ColdMountains:
+                this.bossSprite = this.add.sprite(this.scale.width * 2, this.scale.height / 2, BossAtlas.Yeti);
+                this.bossSprite.anims.create({
+                    key: 'intro',
+                    frames: this.bossSprite.anims.generateFrameNames(BossAtlas.Yeti, {
+                        prefix: 'yeti_attack-',
+                        start: 0,
+                        end: 5,
+                    }),
+                    frameRate: 10,
                     repeat: 3
                 });
                 break;

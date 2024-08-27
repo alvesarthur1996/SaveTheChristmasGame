@@ -22,6 +22,7 @@ export default class DefaultScene extends Phaser.Scene {
                 .then(opt => {
                     this.options = opt;
                     this.SoundOptions = this.options.Sound;
+                    events.emit('sound_options_changed');
                 })
         }, this);
     }

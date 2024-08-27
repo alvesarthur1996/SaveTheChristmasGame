@@ -74,7 +74,6 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
 
     preUpdate(time: number, delta: number) {
         super.preUpdate(time, delta);
-
         this.lifespan -= delta;
 
         if (this.lifespan <= 0) {

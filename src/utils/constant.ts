@@ -41,14 +41,26 @@ export const GameUtils: any =  {
         {key:'life_tank', path: 'sprites/objects/milk_tank.png'},
         {key:'small_health', path: 'sprites/objects/small_life.png'},
         {key:'weapon_energy', path: 'sprites/objects/weapon_energy.png'},
+        {key:'game_title', path: 'images/game_title.jpeg'},
+
         {key:'megacommando', path: 'maps/mad_factory/megacommando.png'},
+        
         {key:'other_candy_blocks', path: 'maps/candy_land/other_candy_blocks.png'},
         {key:'new_candy_options', path: 'maps/candy_land/new_candy_options.png'},
         {key:'tileset_candy', path: 'maps/candy_land/tileset_candy.png'},
         {key:'tiles_test', path: 'maps/candy_land/tiles_test.png'},
         {key:'candies_factory', path: 'maps/candy_land/candies_factory.png'},
         {key:'candies_props', path: 'maps/candy_land/candies_props.png'},
-        {key:'game_title', path: 'images/game_title.jpeg'},
+        {key:'candy_land_background_image', path: 'maps/candy_land/background.jpg'},
+        
+        {key:'ice_spikes', path: 'maps/cold_mountains/ice_spikes.png'},
+        {key:'icicle', path: 'maps/cold_mountains/icicle.png'},
+        {key:'terrain-tileset', path: 'maps/cold_mountains/terrain-tileset.png'},
+        {key:'tileset_snow', path: 'maps/cold_mountains/tileset_snow.png'},
+        {key:'trees', path: 'maps/cold_mountains/trees.png'},
+        {key:'background/background_image', path: 'maps/cold_mountains/background/background1.png'},
+        {key:'background/background_overlay_2', path: 'maps/cold_mountains/background/background2.png'},
+        {key:'background/background_overlay_3', path: 'maps/cold_mountains/background/background3.png'},
 
         {key:'avalon_logo', path: 'images/logos/logo.jpg'},
     ],
@@ -65,6 +77,11 @@ export const GameUtils: any =  {
         {key:'intro_menu', path: '/sounds/intro/br_theme.mp3'},
     ],
     Sprites: [
+        {
+            spritesheet: "energy_bar",
+            spritesheet_path: "sprites/ui/energy_bar/energy_bar",
+            config:{frameHeight: 32, frameWidth: 32}
+        },
         {
             spritesheet: "santa_claus",
             spritesheet_path: "sprites/characters/santa_claus/santa_claus",
@@ -83,6 +100,11 @@ export const GameUtils: any =  {
         {
             spritesheet: "rudolph_the_red",
             spritesheet_path: "sprites/characters/bosses/rudolph_the_red/rudolph_the_red",
+            config:{frameHeight: 32, frameWidth: 32}
+        },
+        {
+            spritesheet: "yeti",
+            spritesheet_path: "sprites/characters/bosses/yeti/yeti",
             config:{frameHeight: 32, frameWidth: 32}
         },
     ],

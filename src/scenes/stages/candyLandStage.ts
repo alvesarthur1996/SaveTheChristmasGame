@@ -9,6 +9,8 @@ import GingerMadController from "../../controllers/characters/bosses/gingerMadCo
 import { HealthChange } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
+import YetiController from "../../controllers/characters/bosses/yetiController";
+import { createParallaxImage } from "../../utils/functions";
 
 export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
@@ -33,15 +35,24 @@ export default class CandyLandStage extends DefaultScene {
     preload() {
         this.load.baseURL = 'http://localhost:8080/static/'
         this.load.tilemapTiledJSON('candy_land', 'maps/candy_land/candy_land.json');
-        this.load.image('bg', 'maps/candy_land/background.jpeg')
     }
 
     create() {
-        this.sound.play('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
+        const bgm = this.sound.add('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
+        bgm.play();
         let sound = this.sound.get('candy_land_stage');
+        events.on('sound_options_changed', () => {
+            if (bgm.isPlaying)
+                bgm.setVolume(0.45 * (this.SoundOptions.BGM / 10));
+        });
         try {
             const map = this.mountMap();
             const objectLayer: Tilemaps.ObjectLayer | null = map.getObjectLayer('objects');
+
+            const bg = map.images[0];
+
+            bg.name = 'candy_land_background_image';
+            createParallaxImage(this, 2, bg, 0.35, -80);
 
             map.createLayer('background', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
             this.stage.room_1 = map.createLayer('room_1', ['tileset_candy', 'other_candy_blocks', 'tiles_test'])?.setVisible(true);
@@ -63,7 +74,7 @@ export default class CandyLandStage extends DefaultScene {
 
             this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
             this.handleObjects(objectLayer);
-
+            
             this.matter.world.convertTilemapLayer(this.stage.room_1)
             this.matter.world.convertTilemapLayer(this.stage.room_2)
             this.matter.world.convertTilemapLayer(this.stage.room_3)
@@ -75,7 +86,12 @@ export default class CandyLandStage extends DefaultScene {
             // events.once('boss_arrived', () => {
             events.once('room_boss_camera_trigger', () => {
                 sound.destroy();
-                this.sound.play('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
+                const boss_battle = this.sound.add('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
+                boss_battle.play();
+                events.on('sound_options_changed', () => {
+                    if (boss_battle.isPlaying)
+                        boss_battle.setVolume(0.45 * (this.SoundOptions.BGM / 10));
+                });
                 sound = this.sound.get('boss_fight');
             });
 
@@ -206,7 +222,8 @@ export default class CandyLandStage extends DefaultScene {
                         setTimeout(() => {
                             if (this.bossController) return;
                             // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
-                            let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
+                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
+                            let gingerMad = new YetiController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
                             events.emit('boss_arrived', 28)

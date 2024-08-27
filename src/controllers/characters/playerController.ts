@@ -16,6 +16,7 @@ import JoystickProvider, { GamepadInput } from '../joystick/joystickProvider';
 import KeyboardProvider from '../joystick/keyboardProvider';
 import InputHandler from '../joystick/InputHandler';
 import DefaultScene from '../../scenes/defaultScene';
+import YetiController from './bosses/yetiController';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -564,16 +565,16 @@ export default class PlayerController {
             return
         }
 
-        if (gameObject.getData('type') == 'boss' || Object.keys(BossWeapon).includes(gameObject.name)) {
-            this.handleBossCollision(gameObject);
-        }
-
         if (gameObject.name == Weapons.IceBlock) {
             if ((this.stateMachine.isCurrentState('jump') || this.stateMachine.isCurrentState('falling')))
                 this.stateMachine.setState('idle');
             return;
         }
 
+        if (gameObject.getData('type') == 'boss' || Object.keys(BossWeapon).includes(gameObject.name)) {
+            this.handleBossCollision(gameObject);
+        }
+     
         this.interactiveItemsHandler(gameObject);
     }
 
@@ -653,8 +654,15 @@ export default class PlayerController {
             this.lastEnemyDamage = RudolphTheRedController.meleeDamage;
             this.sprite.setVelocityY(-8);
         }
-        else if (BossWeapon.CandyBoomerang == gameObject.name) {
+        else if (BossWeapon.LaserBeam == gameObject.name) {
             this.lastEnemyDamage = RudolphTheRedController.shootDamage;
+        }
+        else if (Boss.Yeti == gameObject.name) {
+            this.lastEnemyDamage = YetiController.meleeDamage;
+            this.sprite.setVelocityY(-8);
+        }
+        else if (BossWeapon.IceBlock == gameObject.name) {
+            // this.lastEnemyDamage = YetiController.shootDamage;
         }
 
         this.lastEnemy = gameObject;

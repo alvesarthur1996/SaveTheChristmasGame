@@ -5,10 +5,8 @@ import ObstaclesController from "../../controllers/obsctaclesController";
 import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
-import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
 import { HealthChange } from "../../utils/events";
 import DefaultScene from "../defaultScene";
-import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
 import YetiController from "../../controllers/characters/bosses/yetiController";
 import { createParallaxImage } from "../../utils/functions";
 
@@ -57,22 +55,29 @@ export default class ColdMountainsStage extends DefaultScene {
 
             let scroll = 0.15;
             map.images.forEach(element => {
-                createParallaxImage(this, 2, element, scroll, 128);
+                createParallaxImage(this, 3, element, scroll, 128);
                 scroll += 0.3;
             });
 
             map.createLayer("background_tiles", tilesets)?.setVisible(true);
             this.stage.room_1 = map.createLayer('room_1', tilesets)?.setVisible(true);
+            this.stage.room_2 = map.createLayer('room_2', tilesets)?.setVisible(true);
+            this.stage.room_3 = map.createLayer('room_3', tilesets)?.setVisible(true);
+
             console.log(map.getImageLayerNames());
             // const bg_overlay = map.createLayer('background_overlay', tilesets)?.setVisible(true);
 
             this.stage.room_1.setCollisionByProperty({ collision: true });
-
+            this.stage.room_2.setCollisionByProperty({ collision: true });
+            this.stage.room_3.setCollisionByProperty({ collision: true });
+            console.log(this.stage)
 
             this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
             this.handleObjects(objectLayer);
-            // this.cameras.main.setZoom(0.1);
+
             this.matter.world.convertTilemapLayer(this.stage.room_1)
+            this.matter.world.convertTilemapLayer(this.stage.room_2)
+            this.matter.world.convertTilemapLayer(this.stage.room_3)
 
             // events.once('boss_arrived', () => {
             events.once('room_boss_camera_trigger', () => {
@@ -126,14 +131,29 @@ export default class ColdMountainsStage extends DefaultScene {
                     });
                     this.interactions.add('new_spawn', new_spawn);
                     break;
+                case 'fall_camera':
+                    const trigger_fall_cam: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                        label: Stages.ColdMountains + 'fall_camera_trigger'
+                    });
+                    this.interactions.add('camera_trigger', trigger_fall_cam);
+
+
+                    events.on(Stages.ColdMountains + 'fall_camera_trigger', () => {
+                        this.room_cameras.room_1.height = 48 * this.tile_size;
+                        this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
+                    });
+
+                    break;
                 case 'room_2_trigger':
                     const trigger_cam: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
                         isSensor: true,
-                        label: 'room_2_camera_trigger'
+                        label: Stages.ColdMountains + 'room_2_camera_trigger'
                     });
                     this.interactions.add('camera_trigger', trigger_cam);
-                    events.on('room_2_camera_trigger', () => {
+                    events.on(Stages.ColdMountains + 'room_2_camera_trigger', () => {
                         this.stage.room_2!.setVisible(true);
                         this.cameras.main.setBounds(this.room_cameras.room_2.x, this.room_cameras.room_2.y, this.room_cameras.room_2.width, this.room_cameras.room_2.height);
                     });
@@ -142,12 +162,23 @@ export default class ColdMountainsStage extends DefaultScene {
                     const trigger_cam_3: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
                         isSensor: true,
-                        label: 'room_3_camera_trigger'
+                        label: Stages.ColdMountains + 'room_3_camera_trigger'
                     });
                     this.interactions.add('camera_trigger', trigger_cam_3);
-                    events.on('room_3_camera_trigger', () => {
+                    events.on(Stages.ColdMountains + 'room_3_camera_trigger', () => {
                         this.stage.room_3!.setVisible(true);
                         this.cameras.main.setBounds(this.room_cameras.room_3.x, this.room_cameras.room_3.y, this.room_cameras.room_3.width, this.room_cameras.room_3.height);
+                    });
+                    break;
+                case 'room_3_backside_trigger':
+                    const room_3_backside_trigger: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                        label: Stages.ColdMountains + 'room_3_backside_trigger'
+                    });
+                    this.interactions.add('camera_trigger', room_3_backside_trigger);
+                    events.on(Stages.ColdMountains + 'room_3_backside_trigger', () => {
+                        this.cameras.main.setBounds(this.room_cameras.room_3_sub_boss.x, this.room_cameras.room_3_sub_boss.y, this.room_cameras.room_3_sub_boss.width, this.room_cameras.room_3_sub_boss.height);
                     });
                     break;
                 case 'room_4_trigger':
@@ -280,20 +311,26 @@ export default class ColdMountainsStage extends DefaultScene {
         this.room_cameras.room_1 = {
             x: -16 * this.tile_size,
             y: -16 * this.tile_size,
-            width: 81 * this.tile_size,
-            height: 48 * this.tile_size
+            width: 82 * this.tile_size,
+            height: 10 * this.tile_size
         };
         this.room_cameras.room_2 = {
-            x: 48 * this.tile_size,
-            y: 11 * this.tile_size,
-            width: 24 * this.tile_size,
-            height: 22 * this.tile_size
+            x: 65 * this.tile_size,
+            y: 5 * this.tile_size,
+            width: 111 * this.tile_size,
+            height: 24 * this.tile_size
         };
         this.room_cameras.room_3 = {
-            x: 45 * this.tile_size,
-            y: -5 * this.tile_size,
+            x: 176 * this.tile_size,
+            y: 5 * this.tile_size,
             width: 27 * this.tile_size,
-            height: 40 * this.tile_size
+            height: 65 * this.tile_size
+        };
+        this.room_cameras.room_3_sub_boss = {
+            x: 153 * this.tile_size,
+            y: 51 * this.tile_size,
+            width: 24 * this.tile_size,
+            height: 18 * this.tile_size
         };
         this.room_cameras.room_4 = {
             x: 70 * this.tile_size,

@@ -3,6 +3,7 @@ import DefaultScene from "../../../scenes/defaultScene";
 import { sharedInstance as events } from "../../../scenes/eventCentre";
 import Boss, { BossWeapon } from "../../../utils/boss";
 import { callWeaponClassDinamically } from "../../../utils/functions";
+import Stages from "../../../utils/stages";
 import { Weapons } from "../../../utils/weapons";
 import BulletShoot from "../../bulletShoot";
 import StateMachine from "../../stateMachine";
@@ -168,6 +169,8 @@ export default class GingerMadController implements IBoss{
         this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) });
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
         this.destroy()
+        
+        this.scene.on_stage_complete(Stages.CandyLand, BossWeapon.CandyBoomerang);
     }
 
     private createAnimations() {

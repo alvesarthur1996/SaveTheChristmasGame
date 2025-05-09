@@ -1,4 +1,8 @@
+import { BossWeapon } from "../utils/boss";
+import { saveGameState } from "../utils/gameState";
 import { loadOptions, SoundOptions } from "../utils/options";
+import Stages from "../utils/stages";
+import { Weapons } from "../utils/weapons";
 import { sharedInstance as events } from "./eventCentre";
 
 export default class DefaultScene extends Phaser.Scene {
@@ -25,5 +29,24 @@ export default class DefaultScene extends Phaser.Scene {
                     events.emit('sound_options_changed');
                 })
         }, this);
+    }
+
+    on_stage_complete(currentScene: Stages, bossWeapon: BossWeapon | Weapons) {
+        const gameState = this.cache.json.get('gameState');
+        const currentInstance = this;
+
+        gameState.Stages[currentScene].finished = true;
+        gameState.Weapons[bossWeapon].available = true;
+
+        saveGameState(gameState);
+        setTimeout(() => {
+            const currentScene = currentInstance.scene.scene;
+            this.cameras.main.fadeOut(500, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', function () {
+                currentInstance.scene.stop(currentScene);
+                currentInstance.scene.stop('UI');
+                currentInstance.scene.start(Stages.StageComplete, { weapon: bossWeapon });
+            });
+        }, 3000);
     }
 }

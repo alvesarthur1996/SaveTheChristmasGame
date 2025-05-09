@@ -8,7 +8,7 @@ import GameEvents from '../../utils/events';
 import InteractionsController from '../interactionsController';
 import { Weapons } from '../../utils/weapons';
 import BulletShoot from '../bulletShoot';
-import { callWeaponClassDinamically } from '../../utils/functions';
+import { callWeaponClassDinamically, weaponIsAvailable } from '../../utils/functions';
 import Boss, { BossWeapon } from '../../utils/boss';
 import GingerMadController from './bosses/gingerMadController';
 import RudolphTheRedController from './bosses/rudolphTheRedController';
@@ -17,6 +17,8 @@ import KeyboardProvider from '../joystick/keyboardProvider';
 import InputHandler from '../joystick/InputHandler';
 import DefaultScene from '../../scenes/defaultScene';
 import YetiController from './bosses/yetiController';
+import Stages from '../../utils/stages';
+import UI from '../../scenes/ui/UI';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -77,6 +79,9 @@ export default class PlayerController {
         this.stateMachine = new StateMachine(this, 'player');
         this.isTouching = { left: false, right: false, ground: false };
 
+        const storedLife: string = localStorage.getItem('lifeCounter') ?? String(this.lifeCounter);
+        this.lifeCounter = parseInt(storedLife);
+        console.log('Life: ' + this.lifeCounter);
         /** Start Joystick and Keyboard */
         this.startControllers(scene);
 
@@ -130,9 +135,21 @@ export default class PlayerController {
             .setState('idle');
 
         this.weaponList.set(Weapons.SnowBuster, null);
-        this.weaponList.set(Weapons.CandyBoomerang, 28);
-        this.weaponList.set(Weapons.LaserBeam, 28);
-        this.weaponList.set(Weapons.IceBlock, 28);
+
+        Object.keys(Weapons)
+            .filter(key => isNaN(Number(key)))
+            .forEach((element: any) => {
+                const weapon = Weapons[element as keyof typeof Weapons];
+
+                if (weapon === Weapons.SnowBuster) {
+                    return;
+                }
+
+                if (weaponIsAvailable(scene, weapon)) {
+                    this.weaponList.set(element, 28);
+                }
+            });
+
         this.changeWeapon(Weapons.SnowBuster);
 
 
@@ -189,8 +206,8 @@ export default class PlayerController {
 
         const shotTriggered = this.inputHandler.isJustDown('X');
         if (shotTriggered) {
-            const shoot = this.shoots.find(shoot => !shoot.active);
             this.sprite.setFrame('jump_shot');
+            const shoot = this.shoots.find(shoot => !shoot.active);
 
             if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
                 shoot.fire(this.sprite);
@@ -199,6 +216,7 @@ export default class PlayerController {
             } else if (shoot && this.currentWeaponEnergy == null) {
                 shoot.fire(this.sprite);
             }
+            this.sprite.setFrame('jump');
         }
     }
 
@@ -278,16 +296,24 @@ export default class PlayerController {
     private jumpOnEnter() {
         if (!this.isTouching.ground) return;
         this.sprite.setFrame('jump');
-        this.sprite.setVelocityY(-5.1);
-        this.speedY = -5.1;
+        this.speedY = -2.3;
+        this.sprite.setVelocityY(this.speedY);
     }
 
     private jumpOnUpdate(dt: number) {
         const speedX = 1.5;
         this.sprite.setFrame('jump');
-
-        // if (this.stateMachine.isCurrentState('jump'))
-        // this.fallSpeedFactor(dt);
+        if (this.inputHandler.isDown('A') && !this.inputHandler.isJustDown('A')) {
+            if (this.speedY <= -2.1 && this.speedY >= -5.25) {
+                this.speedY -= 0.375;
+                // Or this.speedY -= (dt/50);
+            } else {
+                this.speedY += 0.375;
+                // Or this.speedY += (dt/50);
+                this.stateMachine.setState('falling');
+            }
+            this.sprite.setVelocityY(this.speedY);
+        }
 
         if (this.inputHandler.isDown('left') && !this.isTouching.left) {
             this.sprite.flipX = true;
@@ -301,9 +327,9 @@ export default class PlayerController {
 
         const shotTriggered = this.inputHandler.isJustDown('X');
         if (shotTriggered) {
+            this.sprite.setFrame('jump_shot');
             const shoot = this.shoots.find(shoot => !shoot.active);
 
-            this.sprite.setFrame('jump_shot');
             if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
                 shoot.fire(this.sprite);
                 this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
@@ -311,6 +337,7 @@ export default class PlayerController {
             } else if (shoot && this.currentWeaponEnergy == null) {
                 shoot.fire(this.sprite);
             }
+            this.sprite.setFrame('jump');
         }
     }
 
@@ -409,21 +436,28 @@ export default class PlayerController {
         this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) })
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
 
-        events.emit(GameEvents.LifeLoss);
+        if (!this.destroyed) {
+            this.destroyed = true;
+            events.emit(GameEvents.LifeLoss);
 
-        this.scene.time.delayedCall(2000, () => {
-            this.scene.cameras.main.fade(250, 0, 0, 0);
-            this.scene.cameras.main.once("camerafadeoutcomplete", () => {
-                if (this.lifeCounter <= 0) {
-                    this.spawnPosition = { x: 0, y: 0 };
-                    this.scene.scene.start("game-over")
-                    // this.lifeCounter = 3;
-                }
-                else {
-                    this.scene.scene.restart()
-                }
+            this.scene.time.delayedCall(2000, () => {
+                this.scene.cameras.main.fade(250, 0, 0, 0);
+                this.scene.cameras.main.once("camerafadeoutcomplete", () => {
+                    if (this.lifeCounter > 0) {
+                        this.lifeCounter -= 1;
+                        localStorage.setItem('lifeCounter', `${this.lifeCounter}`);
+                        this.scene.scene.restart();
+                    } else {
+                        this.spawnPosition = { x: 0, y: 0 };
+                        this.scene.scene.stop(this.scene.name);
+                        this.scene.scene.stop('UI');
+                        this.scene.scene.start(Stages.SelectStage);
+                        localStorage.setItem('lifeCounter', '3');
+                        localStorage.setItem('spawnPosition', JSON.stringify({ x: 0, y: 0 }));
+                    }
+                });
             });
-        });
+        }
 
         this.removeCollisionListeners();
     }
@@ -540,7 +574,7 @@ export default class PlayerController {
         const hasAnyStageInteraction = this.stageInteractionHandler(bodyB);
         if (hasAnyStageInteraction) return;
 
-        if (this.invencibility && (Object.values(Boss).includes(bodyB.gameObject.name) || Object.values(BossWeapon).includes(bodyB.gameObject.name))) {
+        if (this.invencibility && (Object.values(Boss).includes(bodyB.gameObject?.name) || Object.values(BossWeapon).includes(bodyB.gameObject?.name))) {
             return;
         }
 
@@ -552,29 +586,31 @@ export default class PlayerController {
             if (pair.separation > 0.5) this.sprite.x -= pair.separation - 0.5;
         } else if (bodyA === this.sensors.bottom) {
             this.isTouching.ground = true;
+            // If we're in jump or falling state and hit ground, go to idle
+            if ((this.stateMachine.isCurrentState('jump') || this.stateMachine.isCurrentState('falling'))) {
+                if (bodyB.label === 'stage_complete_ground' || bodyB.gameObject instanceof Phaser.Physics.Matter.TileBody) {
+                    this.stateMachine.setState('idle');
+                }
+            }
         }
 
         this.obstaclesHandler(bodyB);
 
-        const gameObject = bodyB.gameObject
+        const gameObject = bodyB.gameObject;
         if (!gameObject) return;
 
         if (gameObject instanceof Phaser.Physics.Matter.TileBody) {
-            if ((this.stateMachine.isCurrentState('jump') || this.stateMachine.isCurrentState('falling')))
-                this.stateMachine.setState('idle');
-            return
+            return;
         }
 
         if (gameObject.name == Weapons.IceBlock) {
-            if ((this.stateMachine.isCurrentState('jump') || this.stateMachine.isCurrentState('falling')))
-                this.stateMachine.setState('idle');
             return;
         }
 
         if (gameObject.getData('type') == 'boss' || Object.keys(BossWeapon).includes(gameObject.name)) {
             this.handleBossCollision(gameObject);
         }
-     
+
         this.interactiveItemsHandler(gameObject);
     }
 
@@ -670,8 +706,10 @@ export default class PlayerController {
     }
 
     private removeCollisionListeners() {
-        const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite];
+        const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite.body];
+        // @ts-ignore - Type mismatch in matter-js collision system
         this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
+        // @ts-ignore - Type mismatch in matter-js collision system
         this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
     }
 
@@ -695,6 +733,9 @@ export default class PlayerController {
 
     private handleChangeCurrentWeapon() {
         const currentWeaponShoots: number | null = this.currentWeaponEnergy;
+        if (this.weaponList.size <= 1)
+            return;
+
         this.weaponList.delete(this.currentWeapon);
 
         const nextWeapon = this.weaponList.entries().next();
@@ -753,6 +794,11 @@ export default class PlayerController {
 
     public getSprite(): Phaser.Physics.Matter.Sprite {
         return this.sprite;
+    }
+
+
+    public setWeapon(weapon: Weapons): void {
+        this.changeWeapon(weapon);
     }
 
     destroy() {

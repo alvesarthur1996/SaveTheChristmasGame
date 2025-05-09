@@ -13,6 +13,7 @@ import StageSelect from './scenes/stageSelect';
 import LoadingStage from './scenes/loading/loadingStage';
 import TitleScreen from './scenes/titleScreen';
 import ColdMountainsStage from './scenes/stages/coldMountains';
+import StageComplete from './scenes/stageComplete';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -68,7 +69,8 @@ const config: Phaser.Types.Core.GameConfig = {
     ColdMountainsStage,
     GameController,
     UI,
-    GameOverScene
+    GameOverScene,
+    StageComplete
   ],
   plugins: {
     scene: [matterCollision]
@@ -76,7 +78,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'matter',
     matter: {
-      // debug: true,
+      debug: true,
       gravity: {
         y: 0.75,
         x: 0

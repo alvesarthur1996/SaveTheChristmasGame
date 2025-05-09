@@ -1,4 +1,5 @@
 import { GameUtils } from "../../utils/constant";
+import { loadGameState } from "../../utils/gameState";
 import { loadOptions } from "../../utils/options";
 import Stages from "../../utils/stages";
 export default class LoadingScene extends Phaser.Scene {
@@ -16,6 +17,11 @@ export default class LoadingScene extends Phaser.Scene {
             .then((options) => {
                 this.cache.json.add('config', options);
             })
+
+        loadGameState()
+            .then((options) => {
+                this.cache.json.add('gameState', options);
+            });
 
         this.load.baseURL = "http://localhost:8080/static/"
         this.loadImages();
@@ -53,24 +59,25 @@ export default class LoadingScene extends Phaser.Scene {
     create() {
         const { width, height } = this.scale;
 
-        this.add.image(width / 2, height / 2, 'avalon_logo').setScale(0.5, 0.5);
-        this.add.text(width / 2, (height / 2) + 50, "Avalon Games", {
+        this.add.image(width / 2, height / 2, 'avalon_logo').setScale(1);
+        this.add.text(width / 2, (height / 1.9) + 50, "Avalon Games", {
             fontFamily: "GameFont",
             fontSize: "12px",
             fontStyle: 'bold'
         }).setOrigin(0.5, 0)
 
         this.cameras.main.fadeIn(1000, 0, 0, 0);
-        console.log(this.cache.json.exists('config'));
-        // this.scene.start(Stages.ColdMountains);
-        
+
         setTimeout(() => {
             this.cameras.main.fadeOut(1000, 0, 0, 0, (camera: any, progress: any) => {
                 if (progress === 1) {
+                    // this.scene.start(Stages.TitleScreen);
+                    this.scene.start(Stages.StageComplete);
                     // this.scene.start(Stages.SelectStage);
-                    this.scene.start(Stages.TitleScreen);
+                    // this.scene.start(Stages.ColdMountains);
                 }
             });
-        }, 5000);
+        }, 400);
+        // }, 5000);
     }
 };

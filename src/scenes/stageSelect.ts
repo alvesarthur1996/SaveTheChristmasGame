@@ -1,7 +1,6 @@
 import InputHandler from "../controllers/joystick/InputHandler";
 import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystickProvider";
 import KeyboardProvider from "../controllers/joystick/keyboardProvider";
-import Boss from "../utils/boss";
 import Stages, { BossNames } from "../utils/stages";
 import DefaultScene from "./defaultScene";
 import { sharedInstance as events } from "./eventCentre";
@@ -24,7 +23,7 @@ export default class StageSelect extends DefaultScene {
     ];
 
     private selectedBossIndex = { x: 1, y: 1 };
-
+    private gameState: any = [];
 
     constructor() {
         super({ key: Stages.SelectStage });
@@ -32,6 +31,7 @@ export default class StageSelect extends DefaultScene {
 
     init() {
         this.load_options();
+        this.gameState = this.cache.json.get('gameState');
         this.controller = new JoystickProvider(this, 0);
         this.keyboard = new KeyboardProvider(this);
         this.inputHandler = new InputHandler(this, {
@@ -126,11 +126,15 @@ export default class StageSelect extends DefaultScene {
 
         for (let y = 0; y < this.bossOptions.length; y++) {
             for (let x = 0; x < this.bossOptions[y].length; x++) {
+                const stageOptions = this.gameState.Stages[this.bossOptions[y][x]];
                 const avatar = this.getBossAvatar(this.bossOptions[y][x]);
+
                 if (avatar) {
-                    const bossImage = this.add.image(151 + x * 250, 98 + y * 200, avatar);
-                    bossImage.setScale(avatar == 'santa_avatar' ? 1.7 : 0.22).setDepth(3);
-                    bossMenuContainer.add(bossImage);
+                    if (stageOptions == undefined || !stageOptions.finished) {
+                        const bossImage = this.add.image(151 + x * 250, 98 + y * 200, avatar);
+                        bossImage.setScale(avatar == 'santa_avatar' ? 1.7 : 0.22).setDepth(3);
+                        bossMenuContainer.add(bossImage);
+                    }
                     const bossName = Object.keys(BossNames).indexOf(this.bossOptions[y][x]);
                     this.add.text(151 + x * 250, 187 + y * 200, Object.values(BossNames)[bossName], {
                         fontFamily: 'GameFont',

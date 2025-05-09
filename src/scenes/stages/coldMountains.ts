@@ -63,6 +63,7 @@ export default class ColdMountainsStage extends DefaultScene {
             this.stage.room_1 = map.createLayer('room_1', tilesets)?.setVisible(true);
             this.stage.room_2 = map.createLayer('room_2', tilesets)?.setVisible(true);
             this.stage.room_3 = map.createLayer('room_3', tilesets)?.setVisible(true);
+            this.stage.room_4 = map.createLayer('room_4', tilesets)?.setVisible(true);
 
             console.log(map.getImageLayerNames());
             // const bg_overlay = map.createLayer('background_overlay', tilesets)?.setVisible(true);
@@ -70,6 +71,7 @@ export default class ColdMountainsStage extends DefaultScene {
             this.stage.room_1.setCollisionByProperty({ collision: true });
             this.stage.room_2.setCollisionByProperty({ collision: true });
             this.stage.room_3.setCollisionByProperty({ collision: true });
+            this.stage.room_4.setCollisionByProperty({ collision: true });
             console.log(this.stage)
 
             this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
@@ -78,6 +80,7 @@ export default class ColdMountainsStage extends DefaultScene {
             this.matter.world.convertTilemapLayer(this.stage.room_1)
             this.matter.world.convertTilemapLayer(this.stage.room_2)
             this.matter.world.convertTilemapLayer(this.stage.room_3)
+            this.matter.world.convertTilemapLayer(this.stage.room_4)
 
             // events.once('boss_arrived', () => {
             events.once('room_boss_camera_trigger', () => {
@@ -333,16 +336,16 @@ export default class ColdMountainsStage extends DefaultScene {
             height: 18 * this.tile_size
         };
         this.room_cameras.room_4 = {
-            x: 70 * this.tile_size,
-            y: -4 * this.tile_size,
-            width: 34 * this.tile_size,
-            height: 32 * this.tile_size
+            x: 47 * this.tile_size,
+            y: 48 * this.tile_size,
+            width: 106 * this.tile_size,
+            height: 18 * this.tile_size
         };
         this.room_cameras.room_5 = {
             x: 73 * this.tile_size,
             y: 27 * this.tile_size,
-            width: 31 * this.tile_size,
-            height: 21 * this.tile_size
+            width: 105 * this.tile_size,
+            height: 18 * this.tile_size
         };
         this.room_cameras.room_6 = {
             x: 15 * this.tile_size,

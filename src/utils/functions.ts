@@ -41,3 +41,9 @@ export function createParallaxImage(scene: DefaultScene, count: number, image: o
         x += img.width;
     }
 }
+
+export const weaponIsAvailable = (context: any, weapon: Weapons | BossWeapon) => {
+    const gameState = context.cache.json.get('gameState');
+    console.log(gameState, context);
+    return gameState.Weapons[weapon].available;
+}

@@ -11,6 +11,27 @@ export default class StageComplete extends DefaultScene {
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;
 
+    // Configuration constants
+    private static readonly PLATFORM_CONFIG = {
+        WIDTH_RATIO: 3,      // platform width will be screen width / this value
+        HEIGHT: 40,
+        Y_RATIO: 1.75,      // platform Y position will be screen height / this value
+        X_RATIO: 4.5        // platform X position will be screen width / this value
+    };
+
+    private static readonly BOUNDARY_CONFIG = {
+        WIDTH: 40,
+        HEIGHT: 160,
+        FRICTION: 0.5
+    };
+
+    private static readonly ANIMATION_DELAYS = {
+        WEAPON_NAME_DISPLAY: 2500,
+        RETURN_TO_STAGE: 5000,
+        FADE_IN: 250,
+        TEXT_REVEAL: 1500
+    };
+
     constructor() {
         super({ key: Stages.StageComplete });
     }
@@ -21,31 +42,39 @@ export default class StageComplete extends DefaultScene {
 
     create() {
         const { width, height } = this.scale;
+        this.setupSceneBase(width, height);
 
-        this.cameras.main.fadeIn(250, 0, 0, 0);
+        const platform = this.createPlatform(width, height);
+        this.createBoundaries(platform);
+        this.setupPlayer(platform);
+        this.setupWeaponAcquisitionUI(width, height);
+    }
+
+    update(time: number, delta: number): void {
+        if (this.player) {
+            this.player.update(time, delta);
+        }
+    }
+    private setupSceneBase(width: number, height: number): void {
+        this.cameras.main.fadeIn(StageComplete.ANIMATION_DELAYS.FADE_IN, 0, 0, 0);
         this.children.removeAll();
-
-        // Add black background
         this.add.rectangle(width / 2, height / 2, width, height, 0x000000).setOrigin(0.5);
+    }
 
-        // Platform dimensions and position
-        const platformY = height / 1.75;
-        const platformWidth = width / 3;
-        const platformHeight = 40;
-        const platformX = width / 4.5;
+    private createPlatform(width: number, height: number) {
+        const platformY = height / StageComplete.PLATFORM_CONFIG.Y_RATIO;
+        const platformWidth = width / StageComplete.PLATFORM_CONFIG.WIDTH_RATIO;
+        const platformX = width / StageComplete.PLATFORM_CONFIG.X_RATIO;
 
-        // Create a sprite-based platform that will work with collision detection        
-        // Create platform with a custom label for StageComplete scene
-        const platform = this.matter.add.rectangle(
+        return this.matter.add.rectangle(
             platformX,
             platformY,
             platformWidth,
-            platformHeight,
+            StageComplete.PLATFORM_CONFIG.HEIGHT,
             {
                 isStatic: true,
                 friction: 1,
                 label: 'stage_complete_ground',
-                // Add custom property to identify this type of ground
                 collisionFilter: {
                     group: 0,
                     category: 0x0002,
@@ -53,65 +82,66 @@ export default class StageComplete extends DefaultScene {
                 }
             }
         );
+    }
 
-        // Create boundaries
-        const boundaryHeight = 160;
-        const boundaryWidth = 40;
-
+    private createBoundaries(platform: MatterJS.BodyType): void {
         const boundaryProperties = {
             isStatic: true,
-            friction: 0.5,
+            friction: StageComplete.BOUNDARY_CONFIG.FRICTION,
             label: 'boundary'
         };
 
+        const platformBounds = platform.bounds;
+        const boundaryY = platformBounds.min.y - StageComplete.BOUNDARY_CONFIG.HEIGHT / 2;
+
         // Left boundary
         this.matter.add.rectangle(
-            platformX - platformWidth / 2,
-            platformY - boundaryHeight / 2,
-            boundaryWidth,
-            boundaryHeight,
+            platformBounds.min.x,
+            boundaryY,
+            StageComplete.BOUNDARY_CONFIG.WIDTH,
+            StageComplete.BOUNDARY_CONFIG.HEIGHT,
             boundaryProperties
         );
 
         // Right boundary
         this.matter.add.rectangle(
-            platformX + platformWidth / 2,
-            platformY - boundaryHeight / 2,
-            boundaryWidth,
-            boundaryHeight,
+            platformBounds.max.x,
+            boundaryY,
+            StageComplete.BOUNDARY_CONFIG.WIDTH,
+            StageComplete.BOUNDARY_CONFIG.HEIGHT,
             boundaryProperties
         );
-
-        // Initialize controllers
-        this.obstacles = new ObstaclesController();
-        this.interactions = new InteractionsController();        // Create player
-        this.player = new PlayerController(this, this.obstacles, this.interactions);
-        this.player.setSpritePosition(platformX, platformY - platformHeight * 2); // Position player above platform
-        this.player.setWeapon(this.currentWeapon);
-        // Enable debug for collision visualization (remove in production)
-        this.matter.world.createDebugGraphic();
-        this.matter.world.drawDebug = true;
-
-        // Add weapon acquisition image
-        const santaImg: Phaser.GameObjects.Image = this.add.image(width / 2, height / 2, 'you_got_a_new_weapon').setScale(0.33);
-        santaImg.setOrigin(0, 0.5);
-        santaImg.postFX.addVignette(0.675, 0.5, 0.4);
-
-        // Show text animations
-        this.textYouGotNewWeapon(height);
-
-        // Show weapon name after delay
-        setTimeout(() => {
-            const weaponW = width / 4.5; // Platform X position matches this
-            const weaponH = height / 1.5;
-            this.loadWeaponName(weaponH, weaponW);
-        }, 2500);
     }
 
-    update(time: number, delta: number): void {
-        if (this.player) {
-            this.player.update(time, delta);
-        }
+    private setupPlayer(platform: MatterJS.BodyType): void {
+        this.obstacles = new ObstaclesController();
+        this.interactions = new InteractionsController();
+
+        this.player = new PlayerController(this, this.obstacles, this.interactions);
+        this.player.setSpritePosition(
+            platform.bounds.min.x + (platform.bounds.max.x - platform.bounds.min.x) / 2,
+            platform.bounds.min.y - StageComplete.PLATFORM_CONFIG.HEIGHT * 2
+        );
+        this.player.setWeapon(this.currentWeapon);
+
+        // // Debug visualization (remove in production)
+        // this.matter.world.createDebugGraphic();
+        // this.matter.world.drawDebug = true;
+    }
+
+    private setupWeaponAcquisitionUI(width: number, height: number): void {
+        const santaImg = this.add.image(width / 2, height / 2, 'you_got_a_new_weapon')
+            .setScale(0.33)
+            .setOrigin(0, 0.5);
+        santaImg.postFX.addVignette(0.675, 0.5, 0.4);
+
+        this.textYouGotNewWeapon(height);
+
+        setTimeout(() => {
+            const weaponW = width / StageComplete.PLATFORM_CONFIG.X_RATIO;
+            const weaponH = height / 1.5;
+            this.loadWeaponName(weaponH, weaponW);
+        }, StageComplete.ANIMATION_DELAYS.WEAPON_NAME_DISPLAY);
     }
 
     private textYouGotNewWeapon(screenH: number) {
@@ -177,8 +207,8 @@ export default class StageComplete extends DefaultScene {
 
     private returnToStageSelection() {
         const currentScene = this.scene;
-        this.cameras.main.fadeOut(500, 0, 0, 0);
-        this.cameras.main.once('camerafadeoutcomplete', function () {
+        this.cameras.main.fadeOut(StageComplete.ANIMATION_DELAYS.FADE_IN, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
             currentScene.stop(Stages.StageComplete);
             currentScene.start(Stages.SelectStage);
         });

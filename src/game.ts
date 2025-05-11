@@ -14,6 +14,7 @@ import LoadingStage from './scenes/loading/loadingStage';
 import TitleScreen from './scenes/titleScreen';
 import ColdMountainsStage from './scenes/stages/coldMountains';
 import StageComplete from './scenes/stageComplete';
+import { PauseMenu } from './scenes/ui/pauseMenu';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -69,6 +70,7 @@ const config: Phaser.Types.Core.GameConfig = {
     ColdMountainsStage,
     GameController,
     UI,
+    PauseMenu,
     GameOverScene,
     StageComplete
   ],

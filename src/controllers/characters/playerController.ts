@@ -61,6 +61,7 @@ export default class PlayerController {
     private invencibility = false;
     public spawnPosition = { x: 0, y: 0 };
     private lifeCounter = 3;
+    private lifeTanks: number = 0;
 
     private weaponList: Map<Weapons, number | null> = new Map();
     private currentWeapon: Weapons = Weapons.SnowBuster;
@@ -69,6 +70,8 @@ export default class PlayerController {
 
     private lastEnemy?: Phaser.Physics.Matter.Sprite
     private lastEnemyDamage?: number;
+
+    private inputEnabled = true;
 
     constructor(scene: DefaultScene, obstacles: ObstaclesController, interactions: InteractionsController) {
         this.scene = scene;
@@ -212,7 +215,7 @@ export default class PlayerController {
             if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
                 shoot.fire(this.sprite);
                 this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
-                events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+                events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
             } else if (shoot && this.currentWeaponEnergy == null) {
                 shoot.fire(this.sprite);
             }
@@ -258,7 +261,7 @@ export default class PlayerController {
         if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
             shoot.fire(this.sprite);
             this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
-            events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+            events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
         } else if (shoot && this.currentWeaponEnergy == null) {
             shoot.fire(this.sprite);
         }
@@ -333,7 +336,7 @@ export default class PlayerController {
             if (shoot && this.currentWeaponEnergy !== null && this.currentWeaponEnergy >= 1) {
                 shoot.fire(this.sprite);
                 this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
-                events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+                events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
             } else if (shoot && this.currentWeaponEnergy == null) {
                 shoot.fire(this.sprite);
             }
@@ -348,7 +351,7 @@ export default class PlayerController {
             shoot.fire(this.sprite);
             this.stateMachine.setState('idle');
             this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
-            events.emit('weapon_energy_changed', { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+            events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
         } else if (shoot && this.currentWeaponEnergy == null) {
             shoot.fire(this.sprite);
             this.stateMachine.setState('idle');
@@ -390,7 +393,7 @@ export default class PlayerController {
             from: 0,
             to: 100,
             duration: 100,
-            repeat: 10,
+            repeat: 8,
             yoyo: true,
             ease: Phaser.Math.Easing.Sine.InOut,
             onUpdate: tween => {
@@ -473,7 +476,7 @@ export default class PlayerController {
 
     private setHealth(value: number) {
         this.health = Phaser.Math.Clamp(value, 0, 28);
-        events.emit('health_changed', this.health)
+        events.emit(GameEvents.HealthChanged, this.health)
 
         if (this.health == 0)
             this.stateMachine.setState('death');
@@ -632,6 +635,12 @@ export default class PlayerController {
             return true;
         }
 
+        if (this.interactions.is('boss_near_spawn', body)) {
+            localStorage.setItem("spawnPosition", JSON.stringify(body.position));
+            events.emit('boss_near_spawn');
+            return true;
+        }
+
     }
 
     private obstaclesHandler(body: any) {
@@ -660,19 +669,20 @@ export default class PlayerController {
 
         switch (type) {
             case 'life_tank':
-                events.emit('life_tank_collected');
+                this.lifeTanks++;
+                events.emit(GameEvents.CollectLifeTank);
                 sprite.destroy();
                 break;
             case 'small_health':
                 const smallHp: number = sprite.getData('health') ?? 0;
                 this.health = Phaser.Math.Clamp(this.health + smallHp, 0, 28);
-                events.emit('health_changed', this.health);
+                events.emit(GameEvents.HealthChanged, this.health);
                 sprite.destroy();
                 break;
             case 'big_health':
                 const biglHp: number = sprite.getData('health') ?? 0;
                 this.health = Phaser.Math.Clamp(this.health + biglHp, 0, 28);
-                events.emit('health_changed', this.health)
+                events.emit(GameEvents.HealthChanged, this.health)
                 sprite.destroy();
                 break;
         }
@@ -745,7 +755,7 @@ export default class PlayerController {
         this.weaponList.set(this.currentWeapon, currentWeaponShoots);
         this.currentWeaponEnergy = weaponEnergy;
 
-        events.emit('weapon_changed', { weaponName, weaponEnergy });
+        events.emit(GameEvents.WeaponChanged, { weaponName, weaponEnergy });
         this.changeWeapon(weaponName);
     }
 
@@ -801,6 +811,54 @@ export default class PlayerController {
         this.changeWeapon(weapon);
     }
 
+    public disableInput(): void {
+        this.inputEnabled = false;
+    }
+
+    public enableInput(): void {
+        this.inputEnabled = true;
+    }
+
+    public getHealth(): number {
+        return this.health;
+    }
+
+    public getLifeTankCount(): number {
+        return this.lifeCounter;
+    }
+
+    public getLifeTanks(): number {
+        return this.lifeTanks;
+    }
+
+    public useLifeTank(): boolean {
+        if (this.lifeTanks > 0 && this.health < 28) {
+            this.lifeTanks--;
+            this.health = 28; // Full health
+            events.emit(GameEvents.HealthChanged, this.health);
+            events.emit(GameEvents.LifeTankUsed);
+            return true;
+        }
+        return false;
+    }
+
+    update(time: number, delta: number): void {
+        if (!this.inputEnabled) return;
+        this.controller.update(time, delta);
+        this.keyboard.update(time, delta);
+
+        if (this.destroyed) return;
+        this.stateMachine.update(delta);
+
+        if (this.inputHandler.isJustDown('R1')) {
+            this.handleChangeCurrentWeapon();
+        }
+
+        if (this.inputHandler.isJustDown('Start') && this.scene.scene.key !== Stages.StageComplete) {
+            this.scene.togglePause();
+        }
+    }
+
     destroy() {
         this.destroyed = true;
 
@@ -815,17 +873,5 @@ export default class PlayerController {
         this.removeCollisionListeners();
 
         this.sprite.destroy();
-    }
-
-    update(time: number, dt: number) {
-        this.controller.update(time, dt);
-        this.keyboard.update(time, dt);
-
-        if (this.destroyed) return;
-        this.stateMachine.update(dt);
-
-        if (this.inputHandler.isJustDown('R1')) {
-            this.handleChangeCurrentWeapon();
-        }
     }
 }

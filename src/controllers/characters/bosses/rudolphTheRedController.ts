@@ -8,6 +8,7 @@ import BulletShoot from "../../bulletShoot";
 import StateMachine from "../../stateMachine";
 import IceBlock from "../../weapons/iceBlock";
 import { CollisionSensors, TouchingDetection } from "../playerController";
+import GameEvents from '../../../utils/events';
 
 export default class RudolphTheRedController implements IBoss {
     private stateMachine: StateMachine;
@@ -123,7 +124,7 @@ export default class RudolphTheRedController implements IBoss {
 
         if (shoot) {
             setTimeout(() => {
-                shoot.fire(this.sprite, true);
+                shoot.fire(this.sprite);
             }, 750);
         }
     }
@@ -147,7 +148,7 @@ export default class RudolphTheRedController implements IBoss {
             from: 0,
             to: 100,
             duration: 100,
-            repeat: 11,
+            repeat: 8,
             yoyo: true,
             ease: Phaser.Math.Easing.Sine.InOut,
             onUpdate: tween => {
@@ -299,7 +300,7 @@ export default class RudolphTheRedController implements IBoss {
     }
     protected setHealth(value: number) {
         this.health = Phaser.Math.Clamp(value, 0, this.baseHealth);
-        events.emit('boss_health_changed', this.health);
+        events.emit(GameEvents.BossHealthChanged, this.health);
         if (this.health == 0)
             this.stateMachine.setState('death');
     }

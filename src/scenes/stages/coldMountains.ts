@@ -5,7 +5,7 @@ import ObstaclesController from "../../controllers/obsctaclesController";
 import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
-import { HealthChange } from "../../utils/events";
+import GameEvents, { HealthChange, RoomEvents } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import YetiController from "../../controllers/characters/bosses/yetiController";
 import { createParallaxImage } from "../../utils/functions";
@@ -39,10 +39,9 @@ export default class ColdMountainsStage extends DefaultScene {
     }
 
     create() {
-        const bgm = this.sound.add('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
-        bgm.play();
+        const bgm = this.sound.add('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); bgm.play();
         let sound = this.sound.get('candy_land_stage');
-        events.on('sound_options_changed', () => {
+        events.on(GameEvents.SoundOptionsChanged, () => {
             if (bgm.isPlaying)
                 bgm.setVolume(0.45 * (this.SoundOptions.BGM / 10));
         });
@@ -87,7 +86,7 @@ export default class ColdMountainsStage extends DefaultScene {
                 sound.destroy();
                 const boss_battle = this.sound.add('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
                 boss_battle.play();
-                events.on('sound_options_changed', () => {
+                events.on(GameEvents.SoundOptionsChanged, () => {
                     if (boss_battle.isPlaying)
                         boss_battle.setVolume(0.45 * (this.SoundOptions.BGM / 10));
                 });
@@ -191,11 +190,11 @@ export default class ColdMountainsStage extends DefaultScene {
                         label: 'room_4_camera_trigger'
                     });
                     this.interactions.add('camera_trigger', trigger_cam_4);
-                    events.once('room_4_camera_trigger', () => {
+                    events.once(RoomEvents.Room4Camera, () => {
                         this.stage.room_3!.setVisible(true);
                         this.cameras.main.setBounds(this.room_cameras.room_4.x, this.room_cameras.room_4.y, this.room_cameras.room_4.width, this.room_cameras.room_4.height);
                         setTimeout(() => { trigger_cam_4.isSensor = false; }, 500);
-                        events.off('room_4_camera_trigger');
+                        events.off(RoomEvents.Room4Camera);
                     });
                     break;
                 case 'room_5_trigger':
@@ -248,10 +247,9 @@ export default class ColdMountainsStage extends DefaultScene {
                             if (this.bossController) return;
                             // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
                             // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
-                            let gingerMad = new YetiController(this, this.playerController!.getSprite());
-                            this.bossController = gingerMad;
+                            let gingerMad = new YetiController(this, this.playerController!.getSprite()); this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
-                            events.emit('boss_arrived', 28)
+                            events.emit(GameEvents.BossArrived, 28)
                             console.log("Boss activation");
                         }, 2000);
                     });

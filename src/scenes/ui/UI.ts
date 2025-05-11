@@ -2,11 +2,11 @@ import Phaser from 'phaser'
 import { sharedInstance as events } from '../eventCentre';
 import { Weapons } from '../../utils/weapons';
 import GameEvents from '../../utils/events';
+import PlayerController from '../../controllers/characters/playerController';
 
 export default class UI extends Phaser.Scene {
-    private milkTankLabel!: Phaser.GameObjects.Text
-    private milkTanks = 0;
-    private lifeCounter = 3;
+    private lifeTankLabel!: Phaser.GameObjects.Text;
+    private playerController?: PlayerController;
     private currentWeapon!: Phaser.GameObjects.Text;
 
     private bossEnergyBar!: Phaser.GameObjects.Image;
@@ -17,33 +17,60 @@ export default class UI extends Phaser.Scene {
         super({ key: 'UI' });
     }
 
-    init() {
-        this.milkTanks = 0;
-    }
-
     create() {
-        this.graphics = this.add.graphics();
-        this.boss_graphics = this.add.graphics();
+        // Get reference to the player controller
+        const activeScene = this.scene.manager.getScenes(true).find(scene =>
+            scene.scene.key !== 'UI'
+        );
+        if (activeScene) {
+            // @ts-ignore - We know this exists in our game scenes
+            this.playerController = activeScene.playerController;
+        }
+
+        // Initialize UI elements
         this.currentWeapon = this.add.text(5, 5, Weapons.SnowBuster);
         this.setHealthBar(28);
 
-        this.milkTankLabel = this.add.text(300, 10, 'Life Tank: 0', {
+        // Setup UI elements
+        this.lifeTankLabel = this.add.text(300, 10, `Life Tanks: ${this.playerController?.getLifeTanks() ?? 0}`, {
             fontSize: '32px'
-        })
-        events.on('life_tank_collected', this.milkTankCollected, this);
-        events.on('health_changed', this.healthChanged, this);
+        });
 
-        events.on('boss_arrived', this.setBossBar, this);
-        events.on('boss_health_changed', this.setBossBar, this);
+        // Event listeners for game state
+        events.on(GameEvents.CollectLifeTank, this.updateLifeTanks, this);
+        events.on(GameEvents.LifeTankUsed, this.updateLifeTanks, this);
+        events.on(GameEvents.HealthChanged, this.healthChanged, this);
+        events.on(GameEvents.BossArrived, this.setBossBar, this);
+        events.on(GameEvents.BossHealthChanged, this.setBossBar, this);
+        events.on(GameEvents.WeaponChanged, this.setWeaponEnergyBar, this);
+        events.on(GameEvents.WeaponEnergyChanged, this.weaponEnergyChanged, this);
 
-        events.on('weapon_changed', this.setWeaponEnergyBar, this);
-        events.on('weapon_energy_changed', this.weaponEnergyChanged, this);
+        // Add pause/resume event handlers
+        events.on(GameEvents.GamePaused, this.handlePause, this);
+        events.on(GameEvents.GameResumed, this.handleResume, this);
 
-        events.once(GameEvents.LifeLoss, () => { this.lifeCounter -= 1; }, this);
-
+        // Cleanup on shutdown
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            events.off('life_tank_collected', this.milkTankCollected, this);
-        })
+            events.off(GameEvents.CollectLifeTank, this.updateLifeTanks, this);
+            events.off(GameEvents.LifeTankUsed, this.updateLifeTanks, this);
+            events.off(GameEvents.HealthChanged, this.healthChanged, this);
+            events.off(GameEvents.BossArrived, this.setBossBar, this);
+            events.off(GameEvents.BossHealthChanged, this.setBossBar, this);
+            events.off(GameEvents.WeaponChanged, this.setWeaponEnergyBar, this);
+            events.off(GameEvents.WeaponEnergyChanged, this.weaponEnergyChanged, this);
+            events.off(GameEvents.GamePaused, this.handlePause, this);
+            events.off(GameEvents.GameResumed, this.handleResume, this);
+        });
+    }
+
+    private handlePause(): void {
+        // Pause any UI animations or tweens
+        this.tweens.pauseAll();
+    }
+
+    private handleResume(): void {
+        // Resume UI animations or tweens
+        this.tweens.resumeAll();
     }
 
     private setWeaponEnergyBar({ weaponName, weaponEnergy }: { weaponName: Weapons, weaponEnergy: number | null }) {
@@ -84,9 +111,10 @@ export default class UI extends Phaser.Scene {
         this.setWeaponEnergyBar({ weaponName, weaponEnergy });
     }
 
-    private milkTankCollected() {
-        this.milkTanks++;
-        this.milkTankLabel.text = `Life Tank: ${this.milkTanks}`
+    private updateLifeTanks() {
+        if (this.playerController) {
+            this.lifeTankLabel.text = `Life Tanks: ${this.playerController.getLifeTanks()}`
+        }
     }
 
     private setBossBar(value: number) {
@@ -98,22 +126,5 @@ export default class UI extends Phaser.Scene {
         this.bossEnergyBar = this.add.image((this.scale.width - 20), 100, 'energy_bar_atlas', 'energy_bar_' + currentLife);
         this.bossEnergyBar.setTint(0xF08080)
         this.bossEnergyBar.setScale(2.5);
-
-
-        // const height = 150;
-        // const currentLife = Phaser.Math.Clamp(value, 0, 28) / 28;
-        // const offsetLife = 200 - (height * (currentLife));
-
-        // this.boss_graphics.clear();
-        // this.boss_graphics.fillStyle(0x9c9c9c);
-        // this.boss_graphics.fillRect((this.scale.width - 40), 50, 30, height)
-        // if (currentLife > 0) {
-        //     this.boss_graphics.fillStyle(0xff5555);
-        //     this.boss_graphics.fillRect((this.scale.width - 40), offsetLife, 30, (height * currentLife));
-        // }
     }
-
-    update(time: number, delta: number): void {
-
-    }
-};
+}

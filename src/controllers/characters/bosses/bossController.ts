@@ -2,15 +2,16 @@ import IBoss from "../../../contracts/boss";
 import DefaultScene from "../../../scenes/defaultScene";
 import { sharedInstance as events } from "../../../scenes/eventCentre";
 import Boss, { BossWeapon } from "../../../utils/boss";
+import GameEvents from "../../../utils/events";
 import { callWeaponClassDinamically } from "../../../utils/functions";
 import { Weapons } from "../../../utils/weapons";
 import BulletShoot from "../../bulletShoot";
 import StateMachine from "../../stateMachine";
 import { CollisionSensors, TouchingDetection } from "../playerController";
 
-export default class BossController implements IBoss{
+export default class BossController implements IBoss {
     protected stateMachine: StateMachine;
-    protected scene: DefaultScene
+    protected scene: DefaultScene;
     protected player: Phaser.Physics.Matter.Sprite;
     protected sprite!: Phaser.Physics.Matter.Sprite;
     protected baseHealth = 28;
@@ -25,22 +26,18 @@ export default class BossController implements IBoss{
     protected currentAction!: string;
     protected destroyed = false;
 
-
     protected weakness!: Weapons;
-
 
     protected weaponList: Array<BossWeapon> = [];
     protected currentWeapon!: BossWeapon;
     protected shoots: Array<BulletShoot> = [];
-
-
 
     constructor(scene: DefaultScene, player: Phaser.Physics.Matter.Sprite) {
         this.player = player;
         this.scene = scene;
         this.isTouching = { left: false, right: false, ground: false };
 
-        this.scene.matter.world.on('beforeupdate', this.resetTouching, this);
+        this.scene.matter.world.on("beforeupdate", this.resetTouching, this);
         this.scene.events.on("update", this.update, this);
         this.scene.events.once("shutdown", this.destroy, this);
         this.scene.events.once("destroy", this.destroy, this);
@@ -51,7 +48,7 @@ export default class BossController implements IBoss{
     }
 
     protected changeWeapon(weapon: BossWeapon) {
-        if (this.weaponList.filter(i => i == weapon).length)
+        if (this.weaponList.filter((i) => i == weapon).length)
             this.currentWeapon = weapon;
 
         this.shoots = [];
@@ -61,7 +58,7 @@ export default class BossController implements IBoss{
                 x: this.sprite.x,
                 y: this.sprite.y,
                 bodyOptions: {},
-                soundOptions: this.scene.SoundOptions
+                soundOptions: this.scene.SoundOptions,
             });
             if (weapon) this.shoots.push(weapon);
         }
@@ -69,9 +66,9 @@ export default class BossController implements IBoss{
 
     protected setHealth(value: number) {
         this.health = Phaser.Math.Clamp(value, 0, this.baseHealth);
-        events.emit('boss_health_changed', this.health);
-        if (this.health == 0){
-            this.currentAction = 'death';
+        events.emit(GameEvents.BossHealthChanged, this.health);
+        if (this.health == 0) {
+            this.currentAction = "death";
         }
     }
 
@@ -84,7 +81,12 @@ export default class BossController implements IBoss{
     }
 
     protected removeCollisionListeners() {
-        const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite];
+        const sensors = [
+            this.sensors.bottom,
+            this.sensors.left,
+            this.sensors.right,
+            this.sprite,
+        ];
         this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
         this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
     }
@@ -94,21 +96,19 @@ export default class BossController implements IBoss{
 
         this.actionTime += delta;
 
-        if (this.actionTime >= 2000)
-            this.actionTime = 0;
+        if (this.actionTime >= 2000) this.actionTime = 0;
         if (this.actionTime > 0) return;
-
 
         let random = Math.ceil(Math.random() * 80);
         if (random >= 0 && random < 45) {
-            this.currentAction = 'move';
+            this.currentAction = "move";
         } else if (random >= 45 && random < 60) {
-            if (this.currentAction == 'jump')
-                this.currentAction = 'shoot';
+            if (this.currentAction == "jump")
+                this.currentAction = "shoot";
             else
-                this.currentAction = 'jump';
-        } else if ((random >= 60 && random < 100)) {
-            this.currentAction = 'shoot';
+                this.currentAction = "jump";
+        } else if (random >= 60 && random < 100) {
+            this.currentAction = "shoot";
         }
     }
 
@@ -129,7 +129,6 @@ export default class BossController implements IBoss{
     update(time: number, dt: number) {
         if (this.destroyed) return;
         this.stateMachine.update(dt);
-        if (this.player)
-            this.fightMode(dt);
+        if (this.player) this.fightMode(dt);
     }
 }

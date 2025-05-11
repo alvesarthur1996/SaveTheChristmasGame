@@ -8,8 +8,9 @@ import { Weapons } from "../../../utils/weapons";
 import BulletShoot from "../../bulletShoot";
 import StateMachine from "../../stateMachine";
 import { CollisionSensors, TouchingDetection } from "../playerController";
+import GameEvents from '../../../utils/events';
 
-export default class GingerMadController implements IBoss{
+export default class GingerMadController implements IBoss {
     private stateMachine: StateMachine;
     private scene: DefaultScene
     private player: Phaser.Physics.Matter.Sprite;
@@ -147,7 +148,7 @@ export default class GingerMadController implements IBoss{
             from: 0,
             to: 100,
             duration: 100,
-            repeat: 11,
+            repeat: 8,
             yoyo: true,
             ease: Phaser.Math.Easing.Sine.InOut,
             onUpdate: tween => {
@@ -169,7 +170,7 @@ export default class GingerMadController implements IBoss{
         this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) });
         this.sprite.setVelocity(0, 0).setIgnoreGravity(true);
         this.destroy()
-        
+
         this.scene.on_stage_complete(Stages.CandyLand, BossWeapon.CandyBoomerang);
     }
 
@@ -297,7 +298,7 @@ export default class GingerMadController implements IBoss{
     }
     protected setHealth(value: number) {
         this.health = Phaser.Math.Clamp(value, 0, this.baseHealth);
-        events.emit('boss_health_changed', this.health);
+        events.emit(GameEvents.BossHealthChanged, this.health);
         if (this.health == 0)
             this.stateMachine.setState('death');
     }

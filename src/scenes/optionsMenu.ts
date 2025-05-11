@@ -5,6 +5,7 @@ import InputHandler from '../controllers/joystick/InputHandler';
 import { sharedInstance as events } from "./eventCentre";
 import DefaultScene from "./defaultScene";
 import { saveOptions } from "../utils/options";
+import GameEvents from '../utils/events';
 
 export default class OptionsMenu extends DefaultScene {
     private buttons: Phaser.GameObjects.Text[] = [];
@@ -132,7 +133,7 @@ export default class OptionsMenu extends DefaultScene {
             this.scene.bringToTop(Stages.MainMenu);
             saveOptions(this.options)
                 .then(() => {
-                    events.emit('options_changes_confirmed');
+                    events.emit(GameEvents.OptionsChangesConfirmed);
                 });
         });
 
@@ -149,7 +150,7 @@ export default class OptionsMenu extends DefaultScene {
         });
 
         /* Events */
-        events.on('option_changed', () => {
+        events.on(GameEvents.OptionChanged, () => {
             soundBGM.text = 'BGM: ' + this.options.Sound.BGM;
             soundSFX.text = 'SFX: ' + this.options.Sound.SFX;
         }, this);
@@ -184,12 +185,12 @@ export default class OptionsMenu extends DefaultScene {
                 case 1:
                     var newValue = Phaser.Math.Clamp(this.options.Sound.BGM - 1, 0, 10);
                     this.options = { ...this.options, Sound: { ...this.options.Sound, BGM: newValue } };
-                    events.emit('option_changed');
+                    events.emit(GameEvents.OptionChanged);
                     break;
                 case 2:
                     var newValue = Phaser.Math.Clamp(this.options.Sound.SFX - 1, 0, 10);
                     this.options = { ...this.options, Sound: { ...this.options.Sound, SFX: newValue } };
-                    events.emit('option_changed');
+                    events.emit(GameEvents.OptionChanged);
                     break;
                 default:
                     break;
@@ -199,12 +200,12 @@ export default class OptionsMenu extends DefaultScene {
                 case 1:
                     var newValue = Phaser.Math.Clamp(this.options.Sound.BGM + 1, 0, 10);
                     this.options = { ...this.options, Sound: { ...this.options.Sound, BGM: newValue } };
-                    events.emit('option_changed');
+                    events.emit(GameEvents.OptionChanged);
                     break;
                 case 2:
                     var newValue = Phaser.Math.Clamp(this.options.Sound.SFX + 1, 0, 10);
                     this.options = { ...this.options, Sound: { ...this.options.Sound, SFX: newValue } };
-                    events.emit('option_changed');
+                    events.emit(GameEvents.OptionChanged);
                     break;
                 default:
                     break;

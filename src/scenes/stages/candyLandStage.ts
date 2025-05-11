@@ -6,7 +6,7 @@ import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
-import { HealthChange } from "../../utils/events";
+import GameEvents, { HealthChange, RoomEvents } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
 import YetiController from "../../controllers/characters/bosses/yetiController";
@@ -21,6 +21,7 @@ export default class CandyLandStage extends DefaultScene {
     private tile_size = 16;
     private room_cameras: any = {};
     private stage: any = {};
+
     constructor() {
         super(Stages.CandyLand);
         this.enemies = [];
@@ -38,10 +39,9 @@ export default class CandyLandStage extends DefaultScene {
     }
 
     create() {
-        const bgm = this.sound.add('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
-        bgm.play();
+        const bgm = this.sound.add('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); bgm.play();
         let sound = this.sound.get('candy_land_stage');
-        events.on('sound_options_changed', () => {
+        events.on(GameEvents.SoundOptionsChanged, () => {
             if (bgm.isPlaying)
                 bgm.setVolume(0.45 * (this.SoundOptions.BGM / 10));
         });
@@ -74,7 +74,7 @@ export default class CandyLandStage extends DefaultScene {
 
             this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
             this.handleObjects(objectLayer);
-            
+
             this.matter.world.convertTilemapLayer(this.stage.room_1)
             this.matter.world.convertTilemapLayer(this.stage.room_2)
             this.matter.world.convertTilemapLayer(this.stage.room_3)
@@ -86,9 +86,8 @@ export default class CandyLandStage extends DefaultScene {
             // events.once('boss_arrived', () => {
             events.once('room_boss_camera_trigger', () => {
                 sound.destroy();
-                const boss_battle = this.sound.add('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) });
-                boss_battle.play();
-                events.on('sound_options_changed', () => {
+                const boss_battle = this.sound.add('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); boss_battle.play();
+                events.on(GameEvents.SoundOptionsChanged, () => {
                     if (boss_battle.isPlaying)
                         boss_battle.setVolume(0.45 * (this.SoundOptions.BGM / 10));
                 });
@@ -104,6 +103,7 @@ export default class CandyLandStage extends DefaultScene {
             console.log("ERROR: ", err)
         }
     }
+
     private mountMap(): Tilemaps.Tilemap {
         const map = this.make.tilemap({ key: 'candy_land', tileWidth: 16, tileHeight: 16 });
         map.addTilesetImage('tileset_candy', 'tileset_candy');
@@ -128,12 +128,23 @@ export default class CandyLandStage extends DefaultScene {
                     this.cameras.main.zoom = 2.1
                     break;
                 case 'spawn_zone_2':
-                case 'boss_spawn':
                     const new_spawn: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
                         isSensor: true,
                     });
                     this.interactions.add('new_spawn', new_spawn);
+                    break;
+                case 'boss_spawn':
+                    const boss_near_spawn: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                        label: 'boss_near_spawn'
+                    });
+                    this.interactions.add('boss_near_spawn', boss_near_spawn);
+                    events.on('boss_near_spawn', () => {
+                        this.cameras.main.setBounds(this.room_cameras.room_6.x, this.room_cameras.room_6.y, this.room_cameras.room_6.width, this.room_cameras.room_6.height);
+                        this.cameras.main.startFollow(this.playerController!.getSprite(), true, 0.5, 0.5);
+                    });
                     break;
                 case 'room_2_trigger':
                     const trigger_cam: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
@@ -221,12 +232,13 @@ export default class CandyLandStage extends DefaultScene {
 
                         setTimeout(() => {
                             if (this.bossController) return;
-                            // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
+                            // Test Spawn: {"x":1405.83035,"y":711.99965}
+                            let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
                             // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
-                            let gingerMad = new YetiController(this, this.playerController!.getSprite());
+                            // let gingerMad = new YetiController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
-                            events.emit('boss_arrived', 28)
+                            events.emit(GameEvents.BossArrived, 28)
                             console.log("Boss activation");
                         }, 2000);
                     });

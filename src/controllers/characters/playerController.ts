@@ -14,7 +14,7 @@ import GingerMadController from './bosses/gingerMadController';
 import RudolphTheRedController from './bosses/rudolphTheRedController';
 import JoystickProvider, { GamepadInput } from '../joystick/joystickProvider';
 import KeyboardProvider from '../joystick/keyboardProvider';
-import InputHandler from '../joystick/InputHandler';
+import InputHandler from '../joystick/inputHandler';
 import DefaultScene from '../../scenes/defaultScene';
 import YetiController from './bosses/yetiController';
 import Stages from '../../utils/stages';

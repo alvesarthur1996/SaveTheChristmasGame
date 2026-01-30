@@ -1,7 +1,7 @@
 import Stages from "../utils/stages";
 import JoystickProvider, { GamepadInput } from '../controllers/joystick/joystickProvider';
 import KeyboardProvider from '../controllers/joystick/keyboardProvider';
-import InputHandler from '../controllers/joystick/InputHandler';
+import InputHandler from '../controllers/joystick/inputHandler';
 import { sharedInstance as events } from "./eventCentre";
 import DefaultScene from "./defaultScene";
 import { saveOptions } from "../utils/options";

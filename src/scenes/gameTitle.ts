@@ -1,4 +1,4 @@
-import InputHandler from "../controllers/joystick/InputHandler";
+import InputHandler from "../controllers/joystick/inputHandler";
 import JoystickProvider, { GamepadInput } from "../controllers/joystick/joystickProvider";
 import KeyboardProvider from "../controllers/joystick/keyboardProvider";
 import Stages from "../utils/stages";

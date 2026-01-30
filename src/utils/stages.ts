@@ -38,4 +38,15 @@ export enum LoadingStagesImages {
     TheCave = 'greedy_green_loading'
 }
 
+export enum StageSlugs {
+    CandyLand = 'candy_land',
+    MadFactory = 'mad_factory',
+    WinterForest = 'winter_forest',
+    FrostyVal = 'frosty_val',
+    ColdMountains = 'cold_mountains',
+    Rolandia = 'rolandia',
+    BadBoyCity = 'bad_boy_city',
+    TheCave = 'the_cave',
+}
+
 export default Stages

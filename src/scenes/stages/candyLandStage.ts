@@ -2,7 +2,7 @@ import { Tilemaps } from "phaser";
 import PlayerController from "../../controllers/characters/playerController";
 import EnemyController from "../../controllers/enemies/enemyController";
 import ObstaclesController from "../../controllers/obsctaclesController";
-import Stages from "../../utils/stages";
+import Stages, { StageSlugs } from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
@@ -11,6 +11,8 @@ import DefaultScene from "../defaultScene";
 import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
 import YetiController from "../../controllers/characters/bosses/yetiController";
 import { createParallaxImage } from "../../utils/functions";
+import CameraController from "../../controllers/cameraController";
+import WorldController from "../../controllers/worldController";
 
 export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
@@ -19,14 +21,14 @@ export default class CandyLandStage extends DefaultScene {
     private interactions!: InteractionsController;
     private enemies!: Array<EnemyController>;
     private tile_size = 16;
-    private room_cameras: any = {};
-    private stage: any = {};
+    private gameCamera: CameraController;
 
     constructor() {
         super(Stages.CandyLand);
         this.enemies = [];
         this.obstacles = new ObstaclesController();
         this.interactions = new InteractionsController();
+        this.gameCamera = new CameraController();
     }
 
     init() {
@@ -35,55 +37,45 @@ export default class CandyLandStage extends DefaultScene {
 
     preload() {
         this.load.baseURL = 'http://localhost:8080/static/'
-        this.load.tilemapTiledJSON('candy_land', 'maps/candy_land/candy_land.json');
+        this.load.tilemapTiledJSON(StageSlugs.CandyLand, 'maps/candy_land/candy_land.json');
     }
 
     create() {
-        const bgm = this.sound.add('candy_land_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); bgm.play();
-        let sound = this.sound.get('candy_land_stage');
+        /* Background Music */
+        const bgm = this.sound.add(StageSlugs.CandyLand + '_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); bgm.play();
+        let sound = this.sound.get(StageSlugs.CandyLand + '_stage');
         events.on(GameEvents.SoundOptionsChanged, () => {
             if (bgm.isPlaying)
                 bgm.setVolume(0.45 * (this.SoundOptions.BGM / 10));
         });
+        
+        /* Camera Setup */
+        this.gameCamera.setSceneCamera(this.cameras.main);
+
+        /* Map Setup */
+        const mapTilesetKeys: string[] = ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'];
+        const backgroungLayer: string = 'background';
+        const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'boss_room'];
+        const worldController = new WorldController(this, StageSlugs.CandyLand, mapTilesetKeys, this.tile_size);
+        
         try {
-            const map = this.mountMap();
-            const objectLayer: Tilemaps.ObjectLayer | null = map.getObjectLayer('objects');
+            worldController.mountMap();
+            worldController.getObjectLayer();
 
-            const bg = map.images[0];
+            const backgroundImage = worldController.getBackgroundImage();
+            if (backgroundImage){
+                createParallaxImage(this, 2, backgroundImage, 0.35, -80);
+            }
 
-            bg.name = 'candy_land_background_image';
-            createParallaxImage(this, 2, bg, 0.35, -80);
+            worldController.createLayers(tilemapLayers, backgroungLayer);
 
-            map.createLayer('background', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
-            this.stage.room_1 = map.createLayer('room_1', ['tileset_candy', 'other_candy_blocks', 'tiles_test'])?.setVisible(true);
-            this.stage.room_2 = map.createLayer('room_2', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
-            this.stage.room_3 = map.createLayer('room_3', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
-            this.stage.room_4 = map.createLayer('room_4', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options']);
-            this.stage.room_5 = map.createLayer('room_5', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
-            this.stage.room_6 = map.createLayer('room_6', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
-            this.stage.boss = map.createLayer('boss_room', ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'])?.setVisible(true);
-
-            this.stage.room_1.setCollisionByProperty({ collision: true });
-            this.stage.room_2.setCollisionByProperty({ collision: true });
-            this.stage.room_3!.setCollisionByProperty({ collision: true });
-            this.stage.room_4!.setCollisionByProperty({ collision: true });
-            this.stage.room_5!.setCollisionByProperty({ collision: true });
-            this.stage.room_6!.setCollisionByProperty({ collision: true });
-            this.stage.boss!.setCollisionByProperty({ collision: true });
             this.mountCameraSetup();
 
-            this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
-            this.handleObjects(objectLayer);
+            this.gameCamera.setRoomBounds('room_1');
+            this.handleObjects(worldController);
 
-            this.matter.world.convertTilemapLayer(this.stage.room_1)
-            this.matter.world.convertTilemapLayer(this.stage.room_2)
-            this.matter.world.convertTilemapLayer(this.stage.room_3)
-            this.matter.world.convertTilemapLayer(this.stage.room_4);
-            this.matter.world.convertTilemapLayer(this.stage.room_5);
-            this.matter.world.convertTilemapLayer(this.stage.room_6);
-            this.matter.world.convertTilemapLayer(this.stage.boss);
+  
 
-            // events.once('boss_arrived', () => {
             events.once('room_boss_camera_trigger', () => {
                 sound.destroy();
                 const boss_battle = this.sound.add('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); boss_battle.play();
@@ -104,16 +96,9 @@ export default class CandyLandStage extends DefaultScene {
         }
     }
 
-    private mountMap(): Tilemaps.Tilemap {
-        const map = this.make.tilemap({ key: 'candy_land', tileWidth: 16, tileHeight: 16 });
-        map.addTilesetImage('tileset_candy', 'tileset_candy');
-        map.addTilesetImage('tiles_test', 'tiles_test');
-        map.addTilesetImage('other_candy_blocks', 'other_candy_blocks');
-        map.addTilesetImage('new_candy_options', 'new_candy_options');
-        return map;
-    }
+    private handleObjects(worldController: WorldController) {
+        const objectLayer: Tilemaps.ObjectLayer | null = worldController.getObjectLayer();
 
-    private handleObjects(objectLayer: Tilemaps.ObjectLayer | null) {
         objectLayer?.objects.forEach(object => {
             const { x = 0, y = 0, name, width = 0, height = 0 } = object;
 
@@ -124,8 +109,7 @@ export default class CandyLandStage extends DefaultScene {
                         this.playerController.spawnPosition = { x, y };
 
                     this.playerController.setSpritePosition(this.playerController.spawnPosition.x, this.playerController.spawnPosition.y);
-                    this.cameras.main.startFollow(this.playerController.getSprite(), true, 0.5, 0.5);
-                    this.cameras.main.zoom = 2.1
+                    this.gameCamera.playerSpawnCamera(this.playerController.getSprite());
                     break;
                 case 'spawn_zone_2':
                     const new_spawn: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
@@ -142,8 +126,8 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('boss_near_spawn', boss_near_spawn);
                     events.on('boss_near_spawn', () => {
-                        this.cameras.main.setBounds(this.room_cameras.room_6.x, this.room_cameras.room_6.y, this.room_cameras.room_6.width, this.room_cameras.room_6.height);
-                        this.cameras.main.startFollow(this.playerController!.getSprite(), true, 0.5, 0.5);
+                        this.gameCamera.setRoomBounds('room_6');
+                        this.gameCamera.playerSpawnCamera(this.playerController!.getSprite());
                     });
                     break;
                 case 'room_2_trigger':
@@ -154,8 +138,8 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('camera_trigger', trigger_cam);
                     events.on('room_2_camera_trigger', () => {
-                        this.stage.room_2!.setVisible(true);
-                        this.cameras.main.setBounds(this.room_cameras.room_2.x, this.room_cameras.room_2.y, this.room_cameras.room_2.width, this.room_cameras.room_2.height);
+                        worldController.setRoomVisibliity('room_2', true);
+                        this.gameCamera.setRoomBounds('room_2');
                     });
                     break;
                 case 'room_3_trigger':
@@ -166,8 +150,8 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('camera_trigger', trigger_cam_3);
                     events.on('room_3_camera_trigger', () => {
-                        this.stage.room_3!.setVisible(true);
-                        this.cameras.main.setBounds(this.room_cameras.room_3.x, this.room_cameras.room_3.y, this.room_cameras.room_3.width, this.room_cameras.room_3.height);
+                        worldController.setRoomVisibliity('room_3', true);
+                        this.gameCamera.setRoomBounds('room_3');
                     });
                     break;
                 case 'room_4_trigger':
@@ -178,8 +162,8 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('camera_trigger', trigger_cam_4);
                     events.once('room_4_camera_trigger', () => {
-                        this.stage.room_3!.setVisible(true);
-                        this.cameras.main.setBounds(this.room_cameras.room_4.x, this.room_cameras.room_4.y, this.room_cameras.room_4.width, this.room_cameras.room_4.height);
+                        worldController.setRoomVisibliity('room_4', true);
+                        this.gameCamera.setRoomBounds('room_4');
                         setTimeout(() => { trigger_cam_4.isSensor = false; }, 500);
                         events.off('room_4_camera_trigger');
                     });
@@ -192,8 +176,8 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('camera_trigger', trigger_cam_5);
                     events.once('room_5_camera_trigger', () => {
-                        this.stage.room_5!.setVisible(true);
-                        this.cameras.main.setBounds(this.room_cameras.room_5.x, this.room_cameras.room_5.y, this.room_cameras.room_5.width, this.room_cameras.room_5.height);
+                        worldController.setRoomVisibliity('room_5', true);
+                        this.gameCamera.setRoomBounds('room_5');
                         setTimeout(() => { trigger_cam_5.isSensor = false; }, 500);
                         events.off('room_5_camera_trigger');
                     });
@@ -206,8 +190,8 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('camera_trigger', trigger_cam_6);
                     events.once('room_6_camera_trigger', () => {
-                        this.stage.room_6!.setVisible(true);
-                        this.cameras.main.setBounds(this.room_cameras.room_6.x, this.room_cameras.room_6.y, this.room_cameras.room_6.width, this.room_cameras.room_6.height);
+                        worldController.setRoomVisibliity('room_6', true);
+                        this.gameCamera.setRoomBounds('room_6');
                         setTimeout(() => { trigger_cam_6.isSensor = false; }, 500);
                         events.off('room_6_camera_trigger');
                     });
@@ -220,15 +204,10 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('camera_trigger', trigger_cam_boss);
                     events.once('room_boss_camera_trigger', () => {
-                        this.stage.boss!.setVisible(true);
-                        this.cameras.main.setBounds(this.room_cameras.boss.x, this.room_cameras.boss.y, this.room_cameras.boss.width, this.room_cameras.boss.height);
+                        worldController.setRoomVisibliity('boss_room', true, true);
+                        this.gameCamera.setRoomBounds('boss_room');
                         setTimeout(() => { trigger_cam_boss.isSensor = false; }, 500);
                         events.off('room_boss_camera_trigger');
-                        this.stage.room_1.setVisible(false);
-                        this.stage.room_2.setVisible(false);
-                        this.stage.room_3.setVisible(false);
-                        this.stage.room_4.setVisible(false);
-                        this.stage.room_6.setVisible(false);
 
                         setTimeout(() => {
                             if (this.bossController) return;
@@ -298,48 +277,13 @@ export default class CandyLandStage extends DefaultScene {
     }
 
     private mountCameraSetup() {
-        this.room_cameras.room_1 = {
-            x: 0 * this.tile_size,
-            y: 14 * this.tile_size,
-            width: 48 * this.tile_size,
-            height: 14 * this.tile_size
-        };
-        this.room_cameras.room_2 = {
-            x: 48 * this.tile_size,
-            y: 11 * this.tile_size,
-            width: 24 * this.tile_size,
-            height: 22 * this.tile_size
-        };
-        this.room_cameras.room_3 = {
-            x: 45 * this.tile_size,
-            y: -5 * this.tile_size,
-            width: 27 * this.tile_size,
-            height: 40 * this.tile_size
-        };
-        this.room_cameras.room_4 = {
-            x: 70 * this.tile_size,
-            y: -4 * this.tile_size,
-            width: 34 * this.tile_size,
-            height: 32 * this.tile_size
-        };
-        this.room_cameras.room_5 = {
-            x: 73 * this.tile_size,
-            y: 27 * this.tile_size,
-            width: 31 * this.tile_size,
-            height: 21 * this.tile_size
-        };
-        this.room_cameras.room_6 = {
-            x: 15 * this.tile_size,
-            y: 35 * this.tile_size,
-            width: 97 * this.tile_size,
-            height: 25 * this.tile_size
-        };
-        this.room_cameras.boss = {
-            x: 88 * this.tile_size,
-            y: 40 * this.tile_size,
-            width: 22 * this.tile_size,
-            height: 16 * this.tile_size
-        };
+        this.gameCamera.setRoomCamera('room_1', 0, 14, 48, 14);
+        this.gameCamera.setRoomCamera('room_2', 48, 11, 24, 22);
+        this.gameCamera.setRoomCamera('room_3', 45, -5, 27, 40);
+        this.gameCamera.setRoomCamera('room_4', 70, -4, 34, 32);
+        this.gameCamera.setRoomCamera('room_5', 73, 27, 31, 21);
+        this.gameCamera.setRoomCamera('room_6', 15, 35, 97, 25);
+        this.gameCamera.setRoomCamera('boss_room', 88, 40, 22, 16);
     };
 
     update(time: number, delta: number): void {

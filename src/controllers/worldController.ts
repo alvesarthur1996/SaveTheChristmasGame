@@ -2,6 +2,8 @@ interface RoomLayer {
     layer: Phaser.Tilemaps.TilemapLayer | null;
 }
 
+type TileFlipSnapshot = { tile: Phaser.Tilemaps.Tile; flipX: boolean; flipY: boolean };
+
 
 export default class WorldController {
     private stageSlug!: string;
@@ -59,8 +61,12 @@ export default class WorldController {
     }
 
     public createLayers(roomNames: string[], backgroundName: string | null = null): void {
+        if (!this.mapTileset) {
+            throw new Error('Map tileset is not mounted. Call mountMap() before createLayers().');
+        }
+
         if (backgroundName) {
-            const backgroundLayer = this.mapTileset.createLayer(backgroundName, this.stageTilesetKeys, 0, 0);
+            this.mapTileset.createLayer(backgroundName, this.stageTilesetKeys, 0, 0);
             // backgroundLayer!.setDepth(-10);
         }
 
@@ -69,7 +75,14 @@ export default class WorldController {
         roomNames.forEach(roomName => {
             const layer = this.mapTileset.createLayer(roomName, this.stageTilesetKeys, 0, 0);
             //layer?.setDepth(1);
-            layer!.setCollisionByProperty({ collision: true });
+
+            if (!layer) {
+                console.warn(`[WorldController] Tilemap layer not found: "${roomName}"`);
+                this.stageRooms.set(roomName, { layer: null });
+                return;
+            }
+
+            layer.setCollisionByProperty({ collision: true });
             this.stageRooms.set(roomName, { layer });
         });
         
@@ -77,11 +90,39 @@ export default class WorldController {
     }
 
     private convertTilemapLayers(): void {
-        this.stageRooms.forEach((roomLayer) => {
-            if (roomLayer.layer) {
-                this.phaserInstance.matter.world.convertTilemapLayer(roomLayer.layer);
-            }  
+        this.stageRooms.forEach((roomLayer, roomName) => {
+            if (!roomLayer.layer) return;
+            this.safelyConvertTilemapLayer(roomLayer.layer, roomName);
         });
+    }
+
+    private safelyConvertTilemapLayer(layer: Phaser.Tilemaps.TilemapLayer, roomName: string): void {
+        const flippedTiles: TileFlipSnapshot[] = [];
+
+        // Workaround for Phaser/MatterTileBody flip bug:
+        // temporarily clear flipX/flipY before convertTilemapLayer, then restore.
+        layer.forEachTile((tile) => {
+            if (!tile) return;
+            if (tile.index === -1) return;
+
+            if (tile.flipX || tile.flipY) {
+                flippedTiles.push({ tile, flipX: tile.flipX, flipY: tile.flipY });
+                tile.flipX = false;
+                tile.flipY = false;
+            }
+        });
+
+        try {
+            this.phaserInstance.matter.world.convertTilemapLayer(layer);
+        } catch (err) {
+            console.error(`[WorldController] convertTilemapLayer failed for "${roomName}"`, err);
+            throw err;
+        } finally {
+            for (const { tile, flipX, flipY } of flippedTiles) {
+                tile.flipX = flipX;
+                tile.flipY = flipY;
+            }
+        }
     }
     
     public getRoomLayers(roomName: string): Phaser.Tilemaps.TilemapLayer | null {

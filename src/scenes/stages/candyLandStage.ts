@@ -55,7 +55,8 @@ export default class CandyLandStage extends DefaultScene {
         /* Map Setup */
         const mapTilesetKeys: string[] = ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'];
         const backgroungLayer: string = 'background';
-        const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'boss_room'];
+        const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'room_7', 'boss_gate'];
+        // const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'boss_room'];
         const worldController = new WorldController(this, StageSlugs.CandyLand, mapTilesetKeys, this.tile_size);
         
         try {
@@ -196,6 +197,34 @@ export default class CandyLandStage extends DefaultScene {
                         events.off('room_6_camera_trigger');
                     });
                     break;
+                case 'room_7_trigger':
+                    const trigger_cam_7: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                        label: 'room_7_camera_trigger'
+                    });
+                    this.interactions.add('camera_trigger', trigger_cam_7);
+                    events.once('room_7_camera_trigger', () => {
+                        worldController.setRoomVisibliity('room_7', true);
+                        this.gameCamera.setRoomBounds('room_7');
+                        setTimeout(() => { trigger_cam_7.isSensor = false; }, 500);
+                        events.off('room_7_camera_trigger');
+                    });
+                    break;
+                case 'boss_gate_trigger':
+                    const boss_gate_cam: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
+                        isStatic: true,
+                        isSensor: true,
+                        label: 'boss_gate_camera_trigger'
+                    });
+                    this.interactions.add('camera_trigger', boss_gate_cam);
+                    events.once('boss_gate_camera_trigger', () => {
+                        worldController.setRoomVisibliity('boss_gate', true);
+                        this.gameCamera.setRoomBounds('boss_gate');
+                        setTimeout(() => { boss_gate_cam.isSensor = false; }, 500);
+                        events.off('boss_gate_camera_trigger');
+                    });
+                    break;
                 case 'boss_room':
                     const trigger_cam_boss: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
@@ -277,13 +306,20 @@ export default class CandyLandStage extends DefaultScene {
     }
 
     private mountCameraSetup() {
-        this.gameCamera.setRoomCamera('room_1', 0, 14, 48, 14);
-        this.gameCamera.setRoomCamera('room_2', 48, 11, 24, 22);
-        this.gameCamera.setRoomCamera('room_3', 45, -5, 27, 40);
-        this.gameCamera.setRoomCamera('room_4', 70, -4, 34, 32);
-        this.gameCamera.setRoomCamera('room_5', 73, 27, 31, 21);
-        this.gameCamera.setRoomCamera('room_6', 15, 35, 97, 25);
-        this.gameCamera.setRoomCamera('boss_room', 88, 40, 22, 16);
+        // e.g this means the coordinates from top left; 
+        // For X, we say is starting at tile 0;
+        // For Y, since we have 18 tiles, I start from 15 to sum with 18 from view
+        // then my Y ends on the limit of room_1 (tile 33)
+
+        this.gameCamera.setRoomCamera('room_1', 0, 15, 48, 14);
+        this.gameCamera.setRoomCamera('room_2', 48, 12, 24, 21);
+        this.gameCamera.setRoomCamera('room_3', 45, -5, 27, 10);
+        this.gameCamera.setRoomCamera('room_4', 70, -5, 42, 10);
+        this.gameCamera.setRoomCamera('room_5', 112, -5, 28, 39);
+        this.gameCamera.setRoomCamera('room_6', 72, 15, 40, 19);
+        this.gameCamera.setRoomCamera('room_7', 72, 33, 24, 18);
+        this.gameCamera.setRoomCamera('boss_gate', 96, 33, 23, 18);
+        // this.gameCamera.setRoomCamera('boss_room', 88, 40, 22, 16);
     };
 
     update(time: number, delta: number): void {

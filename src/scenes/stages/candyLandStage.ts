@@ -317,8 +317,8 @@ export default class CandyLandStage extends DefaultScene {
         this.gameCamera.setRoomCamera('room_4', 70, -5, 42, 10);
         this.gameCamera.setRoomCamera('room_5', 112, -5, 28, 39);
         this.gameCamera.setRoomCamera('room_6', 72, 15, 40, 19);
-        this.gameCamera.setRoomCamera('room_7', 72, 33, 24, 18);
-        this.gameCamera.setRoomCamera('boss_gate', 96, 33, 23, 18);
+        this.gameCamera.setRoomCamera('room_7', 72, 34, 24, 18);
+        this.gameCamera.setRoomCamera('boss_gate', 96, 34, 23, 18);
         // this.gameCamera.setRoomCamera('boss_room', 88, 40, 22, 16);
     };
 

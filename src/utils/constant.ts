@@ -58,6 +58,7 @@ export const GameUtils: any = {
         { key: 'small_health', path: 'sprites/objects/small_life.png' },
         { key: 'weapon_energy', path: 'sprites/objects/weapon_energy.png' },
         { key: 'game_title', path: 'images/game_title.jpeg' },
+        { key: 'boss_doors', path: 'sprites/objects/boss_doors.png' },
 
         { key: 'megacommando', path: 'maps/mad_factory/megacommando.png' },
 

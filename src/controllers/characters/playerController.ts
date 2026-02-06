@@ -19,6 +19,9 @@ import DefaultScene from '../../scenes/defaultScene';
 import YetiController from './bosses/yetiController';
 import Stages from '../../utils/stages';
 import UI from '../../scenes/ui/UI';
+import { Enemy } from '../../utils/enemies';
+import MetController from '../enemies/metController';
+import EnemyController from '../enemies/enemyController';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -610,6 +613,10 @@ export default class PlayerController {
             return;
         }
 
+        if (gameObject.getData('type') == 'enemy' || gameObject.getData('type') == 'enemy_projectile') {
+            this.enemyHandler(gameObject);
+        }
+
         if (gameObject.getData('type') == 'boss' || Object.keys(BossWeapon).includes(gameObject.name)) {
             this.handleBossCollision(gameObject);
         }
@@ -641,6 +648,39 @@ export default class PlayerController {
             return true;
         }
 
+    }
+
+    private enemyHandler(gameObject: any) {
+        if (this.invencibility) return;
+
+        const name: Enemy | null = gameObject.name;
+        const type: string = gameObject.getData?.('type');
+
+        this.lastEnemy = gameObject;
+        
+        if (type == 'enemy') {
+            switch (name) {
+                case Enemy.Met:
+                    this.lastEnemyDamage = MetController.collisionDamage;
+                    break;
+                default:
+                    this.lastEnemyDamage = EnemyController.collisionDamage
+                    break;
+            }
+        } else {
+            switch (name) {
+                case Enemy.Met:
+                    this.lastEnemyDamage = MetController.damage;
+                    break;
+                default:
+                    this.lastEnemyDamage = EnemyController.damage
+                    break;
+            }
+        }
+
+
+        this.stateMachine.setState('enemy_hit');
+        return;
     }
 
     private obstaclesHandler(body: any) {
@@ -677,6 +717,12 @@ export default class PlayerController {
                 const smallHp: number = sprite.getData('health') ?? 0;
                 this.health = Phaser.Math.Clamp(this.health + smallHp, 0, 28);
                 events.emit(GameEvents.HealthChanged, this.health);
+                sprite.destroy();
+                break;
+            case 'weapon_energy':
+                const energy: number = sprite.getData('weapon_energy') ?? 0;
+                this.currentWeaponEnergy = Phaser.Math.Clamp((this.currentWeaponEnergy ?? 0) + energy, 0, 28);
+                events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
                 sprite.destroy();
                 break;
             case 'big_health':

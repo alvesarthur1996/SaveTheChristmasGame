@@ -130,6 +130,13 @@ export default class WorldController {
         return roomLayer ? roomLayer.layer : null;
     }
 
+    /**
+     * Mostra uma sala sem esconder as demais (útil para transições entre rooms onde a anterior deve permanecer ativa).
+     */
+    public showRoom(roomName: string): void {
+        this.setRoomVisibliity(roomName, true, false);
+    }
+
     public setRoomVisibliity(roomName: string, visible: boolean, hideAllOtherRooms: boolean = false): void {
         const roomLayer = this.stageRooms.get(roomName);
         if (roomLayer && roomLayer.layer) {

@@ -22,6 +22,11 @@ export enum HealthChange {
     LifeTank = 28
 }
 
+export enum WeaponEnergyChange {
+    SmallEnergy = 8,
+    BigEnergy = 16
+}
+
 export enum RoomEvents {
     RoomCamera = "room_camera_trigger",
     Room2Camera = "room_2_camera_trigger",

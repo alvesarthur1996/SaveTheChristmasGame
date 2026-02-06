@@ -6,7 +6,7 @@ import Stages, { StageSlugs } from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
-import GameEvents, { HealthChange, RoomEvents } from "../../utils/events";
+import GameEvents, { HealthChange, RoomEvents, WeaponEnergyChange } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
 import YetiController from "../../controllers/characters/bosses/yetiController";
@@ -53,9 +53,9 @@ export default class CandyLandStage extends DefaultScene {
         this.gameCamera.setSceneCamera(this.cameras.main);
 
         /* Map Setup */
-        const mapTilesetKeys: string[] = ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options'];
+        const mapTilesetKeys: string[] = ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options', 'boss_doors'];
         const backgroungLayer: string = 'background';
-        const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'room_7', 'boss_gate'];
+        const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'room_7', 'boss_gate', 'boss_room'];
         // const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'boss_room'];
         const worldController = new WorldController(this, StageSlugs.CandyLand, mapTilesetKeys, this.tile_size);
         
@@ -77,7 +77,7 @@ export default class CandyLandStage extends DefaultScene {
 
   
 
-            events.once('room_boss_camera_trigger', () => {
+            events.once('boss_room_trigger', () => {
                 sound.destroy();
                 const boss_battle = this.sound.add('boss_fight', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); boss_battle.play();
                 events.on(GameEvents.SoundOptionsChanged, () => {
@@ -206,6 +206,7 @@ export default class CandyLandStage extends DefaultScene {
                     this.interactions.add('camera_trigger', trigger_cam_7);
                     events.once('room_7_camera_trigger', () => {
                         worldController.setRoomVisibliity('room_7', true);
+                        worldController.showRoom('boss_gate');
                         this.gameCamera.setRoomBounds('room_7');
                         setTimeout(() => { trigger_cam_7.isSensor = false; }, 500);
                         events.off('room_7_camera_trigger');
@@ -225,18 +226,18 @@ export default class CandyLandStage extends DefaultScene {
                         events.off('boss_gate_camera_trigger');
                     });
                     break;
-                case 'boss_room':
+                case 'boss_room_trigger':
                     const trigger_cam_boss: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
                         isStatic: true,
                         isSensor: true,
-                        label: 'room_boss_camera_trigger'
+                        label: 'boss_room_trigger'
                     });
                     this.interactions.add('camera_trigger', trigger_cam_boss);
-                    events.once('room_boss_camera_trigger', () => {
-                        worldController.setRoomVisibliity('boss_room', true, true);
+                    events.once('boss_room_trigger', () => {
+                        worldController.showRoom('boss_room');
                         this.gameCamera.setRoomBounds('boss_room');
                         setTimeout(() => { trigger_cam_boss.isSensor = false; }, 500);
-                        events.off('room_boss_camera_trigger');
+                        events.off('boss_room_trigger');
 
                         setTimeout(() => {
                             if (this.bossController) return;
@@ -250,6 +251,14 @@ export default class CandyLandStage extends DefaultScene {
                             console.log("Boss activation");
                         }, 2000);
                     });
+                    break;
+                case 'weapon_energy':
+                    const weapon_energy = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'weapon_energy', undefined, {
+                        isStatic: true,
+                        isSensor: true
+                    });
+                    weapon_energy.setData('type', 'weapon_energy');
+                    weapon_energy.setData('weapon_energy', WeaponEnergyChange.SmallEnergy);
                     break;
                 case 'small_health':
                     const small_health = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'small_health', undefined, {
@@ -311,15 +320,15 @@ export default class CandyLandStage extends DefaultScene {
         // For Y, since we have 18 tiles, I start from 15 to sum with 18 from view
         // then my Y ends on the limit of room_1 (tile 33)
 
-        this.gameCamera.setRoomCamera('room_1', 0, 15, 48, 14);
-        this.gameCamera.setRoomCamera('room_2', 48, 12, 24, 21);
+        this.gameCamera.setRoomCamera('room_1', 0, 16, 48, 14);
+        this.gameCamera.setRoomCamera('room_2', 48, 12, 24, 22);
         this.gameCamera.setRoomCamera('room_3', 45, -5, 27, 10);
         this.gameCamera.setRoomCamera('room_4', 70, -5, 42, 10);
         this.gameCamera.setRoomCamera('room_5', 112, -5, 28, 39);
         this.gameCamera.setRoomCamera('room_6', 72, 15, 40, 19);
-        this.gameCamera.setRoomCamera('room_7', 72, 34, 24, 18);
+        this.gameCamera.setRoomCamera('room_7', 72, 34, 25, 18);
         this.gameCamera.setRoomCamera('boss_gate', 96, 34, 23, 18);
-        // this.gameCamera.setRoomCamera('boss_room', 88, 40, 22, 16);
+        this.gameCamera.setRoomCamera('boss_room', 119, 34, 23, 18);
     };
 
     update(time: number, delta: number): void {

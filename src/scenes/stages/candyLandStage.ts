@@ -6,6 +6,7 @@ import Stages, { StageSlugs } from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
+import Boss from "../../utils/boss";
 import GameEvents, { HealthChange, RoomEvents, WeaponEnergyChange } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
@@ -63,6 +64,26 @@ export default class CandyLandStage extends DefaultScene {
             worldController.mountMap();
             worldController.getObjectLayer();
 
+            // Collect boss attack markers (Tiled object layer: `boss_attacks`).
+            // Expected: 10 objects named `candy_shower`.
+            const bossAttacksLayer = worldController.getObjectLayer('boss_attacks');
+            const candyShowerMarkers = (bossAttacksLayer?.objects ?? [])
+                .filter(o => o.name === 'candy_shower')
+                .map(o => ({
+                    x: (o.x ?? 0) + ((o.width ?? 0) / 2),
+                    y: (o.y ?? 0) + ((o.height ?? 0) / 2),
+                    width: o.width ?? 0,
+                    height: o.height ?? 0,
+                }));
+
+            // Canonical boss-special event: phase=markers
+            events.emit(GameEvents.BossSpecialAttack, {
+                boss: Boss.GingerMad,
+                attack: 'candy_shower',
+                phase: 'markers',
+                markers: candyShowerMarkers,
+            });
+
             const backgroundImage = worldController.getBackgroundImage();
             if (backgroundImage){
                 createParallaxImage(this, 2, backgroundImage, 0.35, -80);
@@ -100,6 +121,10 @@ export default class CandyLandStage extends DefaultScene {
     private handleObjects(worldController: WorldController) {
         const objectLayer: Tilemaps.ObjectLayer | null = worldController.getObjectLayer();
 
+        // Gate body is created from the `boss_gate_trigger` object, but it should only become solid
+        // after the player activates `near_boss_respawn` (checkpoint inside the gate corridor).
+        let bossGateBarrier: MatterJS.BodyType | null = null;
+
         objectLayer?.objects.forEach(object => {
             const { x = 0, y = 0, name, width = 0, height = 0 } = object;
 
@@ -119,16 +144,36 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     this.interactions.add('new_spawn', new_spawn);
                     break;
-                case 'boss_spawn':
-                    const boss_near_spawn: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
-                        isStatic: true,
-                        isSensor: true,
-                        label: 'boss_near_spawn'
-                    });
-                    this.interactions.add('boss_near_spawn', boss_near_spawn);
-                    events.on('boss_near_spawn', () => {
-                        this.gameCamera.setRoomBounds('room_6');
-                        this.gameCamera.playerSpawnCamera(this.playerController!.getSprite());
+                case 'near_boss_respawn':
+                    const near_boss_respawn_sensor: MatterJS.BodyType = this.matter.add.rectangle(
+                        x + (width / 2),
+                        y + (height / 2),
+                        width,
+                        height,
+                        {
+                            isStatic: false,
+                            isSensor: true,
+                            label: 'near_boss_respawn'
+                        }
+                    );
+                    this.interactions.add('camera_trigger', near_boss_respawn_sensor);
+                    this.interactions.add('new_spawn', near_boss_respawn_sensor);
+
+                    events.once('near_boss_respawn', () => {
+                        localStorage.setItem('spawnPosition', JSON.stringify({ x: x + (width / 2), y: y + (height / 2) }));
+
+                        worldController.showRoom('boss_gate');
+                        this.gameCamera.setRoomBounds('boss_gate');
+
+                        // After reaching the checkpoint marker inside the corridor, block the way back.
+                        if (bossGateBarrier) {
+                            setTimeout(() => {
+                                bossGateBarrier!.isSensor = false;
+                            }, 500);
+                        }
+
+                        setTimeout(() => { near_boss_respawn_sensor.isSensor = false; }, 500);
+                        events.off('near_boss_respawn');
                     });
                     break;
                 case 'room_2_trigger':
@@ -213,15 +258,33 @@ export default class CandyLandStage extends DefaultScene {
                     });
                     break;
                 case 'boss_gate_trigger':
-                    const boss_gate_cam: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
-                        isStatic: true,
-                        isSensor: true,
-                        label: 'boss_gate_camera_trigger'
-                    });
+                    const boss_gate_cam: MatterJS.BodyType = this.matter.add.rectangle(
+                        x + (width / 2),
+                        y + (height / 2),
+                        width,
+                        height,
+                        {
+                            isStatic: true,
+                            isSensor: true,
+                            label: 'boss_gate_camera_trigger'
+                        }
+                    );
+                    bossGateBarrier = boss_gate_cam;
                     this.interactions.add('camera_trigger', boss_gate_cam);
+
                     events.once('boss_gate_camera_trigger', () => {
-                        worldController.setRoomVisibliity('boss_gate', true);
+                        // Passou o gate -> busca SEMPRE o marker `near_boss_respawn`.
+                        const marker = objectLayer?.objects.find(o => o.name === 'near_boss_respawn');
+                        const mx = (marker?.x ?? (x + (width / 2))) + ((marker?.width ?? 0) / 2);
+                        const my = (marker?.y ?? (y + (height / 2))) + ((marker?.height ?? 0) / 2);
+                        localStorage.setItem('spawnPosition', JSON.stringify({ x: mx, y: my }));
+
+                        worldController.showRoom('boss_gate');
                         this.gameCamera.setRoomBounds('boss_gate');
+
+                        // Emite evento para lógica de entrar na área do boss (sem precisar tocar no marker)
+                        events.emit('near_boss_respawn');
+
                         setTimeout(() => { boss_gate_cam.isSensor = false; }, 500);
                         events.off('boss_gate_camera_trigger');
                     });
@@ -248,6 +311,26 @@ export default class CandyLandStage extends DefaultScene {
                             this.bossController = gingerMad;
                             this.bossController.setSpritePosition(x + 220, y + 50);
                             events.emit(GameEvents.BossArrived, 28)
+
+                            // Re-send boss attack markers now that the boss is alive and listening.
+                            // (EventEmitter doesn't buffer events emitted earlier in `create()`.)
+                            const bossAttacksLayer = worldController.getObjectLayer('boss_attacks');
+                            const candyShowerMarkers = (bossAttacksLayer?.objects ?? [])
+                                .filter(o => o.name === 'candy_shower')
+                                .map(o => ({
+                                    x: (o.x ?? 0) + ((o.width ?? 0) / 2),
+                                    y: (o.y ?? 0) + ((o.height ?? 0) / 2),
+                                    width: o.width ?? 0,
+                                    height: o.height ?? 0,
+                                }));
+
+                            events.emit(GameEvents.BossSpecialAttack, {
+                                boss: Boss.GingerMad,
+                                attack: 'candy_shower',
+                                phase: 'markers',
+                                markers: candyShowerMarkers,
+                            });
+
                             console.log("Boss activation");
                         }, 2000);
                     });

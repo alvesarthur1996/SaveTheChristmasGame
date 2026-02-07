@@ -14,6 +14,7 @@ export enum GameEvents {
     OptionsChangesConfirmed = "OptionsChangesConfirmed",
     OptionChanged = "OptionChanged",
     SoundOptionsChanged = "SoundOptionsChanged",
+    BossSpecialAttack = "BossSpecialAttack",
 }
 
 export enum HealthChange {

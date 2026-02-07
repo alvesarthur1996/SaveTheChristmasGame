@@ -642,12 +642,7 @@ export default class PlayerController {
             return true;
         }
 
-        if (this.interactions.is('boss_near_spawn', body)) {
-            localStorage.setItem("spawnPosition", JSON.stringify(body.position));
-            events.emit('boss_near_spawn');
-            return true;
-        }
-
+        // Legacy interaction removed: boss gate checkpoint is handled by the stage when crossing the boss gate.
     }
 
     private enemyHandler(gameObject: any) {

@@ -33,7 +33,7 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
         this.soundOptions = soundOptions;
     }
 
-    protected onCollideCallback({ bodyA, bodyB, pair }) {
+    protected onCollideCallback({ bodyB }: { bodyB?: any }) {
         if (bodyB?.gameObject instanceof Phaser.Physics.Matter.TileBody) {
             return;
         }
@@ -42,10 +42,19 @@ export default abstract class BulletShoot extends Phaser.Physics.Matter.Sprite {
             return;
         }
 
+        // Ignore collisions with the shooter itself (e.g. boss bullets touching the boss).
+        const owner = this.getData('owner') ?? null;
+        if (owner && bodyB?.gameObject) {
+            const otherName = (bodyB.gameObject as any).name ?? null;
+            const otherType = (bodyB.gameObject as any).getData?.('type') ?? null;
+            if (otherName === owner || otherType === owner) {
+                return;
+            }
+        }
+
         if (bodyB?.gameObject) {
-            const type = bodyB?.gameObject.getData('type') ?? null;
-            if (type == 'boss')
-                this.setActive(false);
+            const type = (bodyB.gameObject as any).getData?.('type') ?? null;
+            if (type == 'boss') this.setActive(false);
             this.setVisible(false);
             this.world.remove([this.body], true);
             return;

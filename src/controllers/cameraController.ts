@@ -57,6 +57,6 @@ export default class CameraController {
 
     public playerSpawnCamera(playerSprite: Phaser.Physics.Matter.Sprite): void {
         this.sceneCamera.startFollow(playerSprite, true, 0.5, 0.5);
-        this.sceneCamera.zoom = 2.1
+        this.sceneCamera.zoom = 2.08
     }
 }

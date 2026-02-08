@@ -76,6 +76,28 @@ export default class PlayerController {
 
     private inputEnabled = true;
 
+    // Ladder / climb state helpers
+    private ladderOverlaps: Set<MatterJS.BodyType> = new Set();
+    private currentLadder: MatterJS.BodyType | null = null;
+    private ladderSnapX: number | null = null;
+    private ladderDetachCooldownMs = 0;
+    private ladderDetachRequiresNeutral = false;
+
+    // Ladder overlap persistence (ms). Keeps climb stable even if collideActive misses a frame.
+    private ladderOverlapTtlMs = 0;
+    private static readonly LADDER_TTL_MS = 120;
+
+    // While climbing we keep collisions enabled; we only shrink the body and override velocity.
+    private climbBodyWasSensor = false;
+    private climbFrictionAirBefore = 0;
+
+    // Climb tuning
+    private static readonly LADDER_CLIMB_SPEED = 1.05;
+
+    // Save/restore collision body scale while climbing ladders (idempotent)
+    private climbBodyScaled = false;
+    private climbBodyScaleApplied = { x: 1, y: 1 };
+
     constructor(scene: DefaultScene, obstacles: ObstaclesController, interactions: InteractionsController) {
         this.scene = scene;
         this.obstacles = obstacles;
@@ -179,6 +201,9 @@ export default class PlayerController {
         this.sprite.play('idle');
     }
     private idleOnUpdate() {
+        // If we're climbing, don't let velocity checks kick us into falling.
+        if (this.stateMachine.isCurrentState('climb')) return;
+
         const velocity = this.sprite.getVelocity();
 
         if (this.inputHandler.isDown('left') || this.inputHandler.isDown('right'))
@@ -195,6 +220,8 @@ export default class PlayerController {
         this.sprite.setFrame('jump');
     }
     private fallingOnUpdate(dt: number) {
+        if (this.stateMachine.isCurrentState('climb')) return;
+
         const speedX = 1.5;
         this.sprite.setFrame('jump');
         if (this.stateMachine.isCurrentState('falling'))
@@ -230,6 +257,8 @@ export default class PlayerController {
         this.sprite.play('move');
     }
     private moveOnUpdate() {
+        if (this.stateMachine.isCurrentState('climb')) return;
+
         const speedX = 1.5;
 
         if (this.inputHandler.isDown('left') && !this.isTouching.left) {
@@ -417,24 +446,180 @@ export default class PlayerController {
 
     private climbOnEnter() {
         this.sprite.play('idle');
-        this.sprite.setVelocityX(0);
-        this.sprite.setIgnoreGravity(true)
+
+        // Choose a ladder to bind to (closest by X).
+        if (!this.currentLadder) {
+            let best: MatterJS.BodyType | null = null;
+            let bestDx = Number.POSITIVE_INFINITY;
+            for (const ladder of this.ladderOverlaps) {
+                const dx = Math.abs((ladder.position?.x ?? 0) - this.sprite.x);
+                if (dx < bestDx) {
+                    bestDx = dx;
+                    best = ladder;
+                }
+            }
+            this.currentLadder = best;
+        }
+
+        this.ladderSnapX = this.currentLadder?.position?.x ?? this.sprite.x;
+
+        // Stop momentum and enter "kinematic-like" control.
+        this.sprite.setVelocity(0, 0);
+
+        // Disable gravity in the most robust way for Phaser+Matter.
+        this.sprite.setIgnoreGravity(true);
+        // @ts-ignore - available on Phaser.Physics.Matter.Sprite
+        this.sprite.setGravityScale?.(0);
+
+        // Reduce air friction while climbing to avoid slow drift.
+        this.climbFrictionAirBefore = (this.sprite.body as MatterJS.BodyType).frictionAir ?? 0;
+        (this.sprite.body as MatterJS.BodyType).frictionAir = 0;
+
+        // Keep normal collision enabled (do NOT force sensor). Store value for restoration only.
+        const physBody = this.sprite.body as MatterJS.BodyType;
+        this.climbBodyWasSensor = !!physBody.isSensor;
+
+        // Snap to the ladder centerline for stable climbing.
+        if (this.ladderSnapX !== null) {
+            this.sprite.setX(this.ladderSnapX);
+        }
+
+        // Shrink collision body while climbing to avoid scraping adjacent tiles.
+        // IMPORTANT: apply once per climb session and restore by applying the inverse on exit.
+        try {
+            if (!this.climbBodyScaled) {
+                this.climbBodyScaleApplied = { x: 0.85, y: 0.92 };
+                // @ts-ignore
+                this.scene.matter.body.scale(this.sprite.body, this.climbBodyScaleApplied.x, this.climbBodyScaleApplied.y);
+                this.climbBodyScaled = true;
+            }
+        } catch {
+            // ignore
+        }
     }
-    private climbOnUpdate(dt) {
-        if (this.inputHandler.isDown('up'))
-            this.sprite.setVelocityY(-2);
-        else if (this.inputHandler.isDown('down'))
-            this.sprite.setVelocityY(2);
-        else
+
+    private climbOnUpdate(dt: number) {
+        // Cooldown prevents instantly re-grabbing after jumping off.
+        if (this.ladderDetachCooldownMs > 0) {
+            this.ladderDetachCooldownMs = Math.max(0, this.ladderDetachCooldownMs - dt);
+        }
+
+        // If we are no longer overlapping any ladder recently, fall.
+        if (this.ladderOverlapTtlMs <= 0) {
+            this.currentLadder = null;
+            this.ladderSnapX = null;
+            this.stateMachine.setState('falling');
+            return;
+        }
+
+        // Keep X snapped while on ladder.
+        if (this.ladderSnapX !== null) {
+            this.sprite.setX(this.ladderSnapX);
+        }
+
+        const climbSpeed = PlayerController.LADDER_CLIMB_SPEED;
+        let vy = 0;
+        if (this.inputHandler.isDown('up')) {
+            vy = -climbSpeed;
+        } else if (this.inputHandler.isDown('down')) {
+            vy = climbSpeed;
+        }
+
+        // Force velocity every frame to prevent slipping.
+        this.sprite.setVelocity(0, vy);
+
+        // Mega Man-style top exit: use ladder bounds instead of ground sensor.
+        const ladder = this.currentLadder;
+        if (ladder && vy < 0) {
+            const ladderTopY = ladder.bounds?.min?.y ?? (ladder.position.y - 16);
+            const playerBody = this.sprite.body as MatterJS.BodyType;
+            const playerBottomY = playerBody.bounds?.max?.y ?? this.sprite.y;
+
+            // When our feet reach the top of the ladder volume, step onto the platform.
+            if (playerBottomY <= ladderTopY + 2) {
+                // Restore climb-side physics (incl. body scale) before leaving.
+                this.exitClimbPhysics();
+
+                // Nudge slightly upward to clear the ladder sensor, then idle.
+                this.sprite.setVelocity(0, 0);
+                this.sprite.setY(this.sprite.y - 4);
+
+                this.currentLadder = null;
+                this.ladderSnapX = null;
+                this.ladderOverlapTtlMs = 0;
+                this.ladderDetachCooldownMs = 120;
+                this.ladderDetachRequiresNeutral = true;
+                this.stateMachine.setState('idle');
+                return;
+            }
+        }
+
+        // Jump off ladder: transition to falling.
+        if (this.inputHandler.isJustDown('A')) {
+            this.ladderDetachCooldownMs = 120;
+            this.ladderDetachRequiresNeutral = true;
+            this.currentLadder = null;
+            this.ladderSnapX = null;
+            this.ladderOverlapTtlMs = 0;
+
+            // Restore climb-side physics (incl. body scale) before leaving.
+            this.exitClimbPhysics();
+
+            // Drop from ladder.
             this.sprite.setVelocityY(0);
+            this.stateMachine.setState('falling');
+            return;
+        }
 
-        const jumpTriggered = this.inputHandler.isJustDown('A');
+        // Bottom exit: if grounded and pressing down, detach and idle.
+        if (this.isTouching.ground && this.inputHandler.isDown('down')) {
+            this.currentLadder = null;
+            this.ladderSnapX = null;
+            this.ladderOverlapTtlMs = 0;
 
-        if (jumpTriggered)
-            this.stateMachine.setState('jump');
+            // Restore climb-side physics (incl. body scale) before leaving.
+            this.exitClimbPhysics();
+
+            this.stateMachine.setState('idle');
+            return;
+        }
     }
+
     private climbOnExit() {
-        this.sprite.setIgnoreGravity(false)
+        this.exitClimbPhysics();
+    }
+
+    /**
+     * Centraliza a saída do estado de escada para garantir restore idempotente
+     * (principalmente o body.scale), mesmo quando a transição acontece fora do onExit.
+     */
+    private exitClimbPhysics() {
+        // Restore collision + physics flags.
+        const physBody = this.sprite.body as MatterJS.BodyType;
+        physBody.isSensor = this.climbBodyWasSensor;
+        physBody.frictionAir = this.climbFrictionAirBefore;
+
+        this.sprite.setIgnoreGravity(false);
+        // @ts-ignore - available on Phaser.Physics.Matter.Sprite
+        this.sprite.setGravityScale?.(1);
+
+        this.sprite.setVelocityX(0);
+
+        // Restore original collision body scale.
+        // IMPORTANT: always undo exactly what we applied on enter (prevents exponential growth).
+        try {
+            if (this.climbBodyScaled) {
+                const ax = this.climbBodyScaleApplied.x || 1;
+                const ay = this.climbBodyScaleApplied.y || 1;
+                // @ts-ignore
+                this.scene.matter.body.scale(this.sprite.body, 1 / ax, 1 / ay);
+            }
+        } catch {
+            // ignore
+        } finally {
+            this.climbBodyScaled = false;
+            this.climbBodyScaleApplied = { x: 1, y: 1 };
+        }
     }
 
     private deathOnEnter() {
@@ -577,6 +762,13 @@ export default class PlayerController {
     }
 
     private onSensorCollide({ bodyA, bodyB, pair }) {
+        // Track ladder overlaps even if we don't otherwise handle the collision.
+        if (bodyB?.label === 'ladder') {
+            this.ladderOverlaps.add(bodyB);
+            this.ladderOverlapTtlMs = PlayerController.LADDER_TTL_MS;
+            if (!this.currentLadder) this.currentLadder = bodyB;
+        }
+
         const hasAnyStageInteraction = this.stageInteractionHandler(bodyB);
         if (hasAnyStageInteraction) return;
 
@@ -626,7 +818,19 @@ export default class PlayerController {
 
     private stageInteractionHandler(body: any) {
         if (body.label == 'ladder') {
-            if (this.inputHandler.isDown('up') && !this.stateMachine.isCurrentState('climb')) {
+            // Only mount ladder with intentional input.
+            const upDownPressed = this.inputHandler.isDown('up') || this.inputHandler.isDown('down');
+
+            // Require a neutral re-input after detaching to avoid instant re-grab.
+            if (this.ladderDetachRequiresNeutral && !upDownPressed) {
+                this.ladderDetachRequiresNeutral = false;
+            }
+
+            const canMount = this.ladderDetachCooldownMs === 0 && !this.ladderDetachRequiresNeutral;
+            const wantsMount = this.inputHandler.isDown('up') || (this.inputHandler.isDown('down') && !this.isTouching.ground);
+
+            if (wantsMount && canMount && !this.stateMachine.isCurrentState('climb')) {
+                this.currentLadder = body;
                 this.stateMachine.setState('climb');
             }
             return true;
@@ -888,8 +1092,29 @@ export default class PlayerController {
         this.controller.update(time, delta);
         this.keyboard.update(time, delta);
 
+        // Decrease ladder TTL every frame.
+        if (this.ladderOverlapTtlMs > 0) {
+            this.ladderOverlapTtlMs = Math.max(0, this.ladderOverlapTtlMs - delta);
+        }
+
+        // Decrease detach cooldown.
+        if (this.ladderDetachCooldownMs > 0) {
+            this.ladderDetachCooldownMs = Math.max(0, this.ladderDetachCooldownMs - delta);
+        }
+
         if (this.destroyed) return;
         this.stateMachine.update(delta);
+
+        // Clear per-frame ladder overlap set AFTER processing states.
+        this.ladderOverlaps.clear();
+
+        // If we are in climb but haven't touched ladder recently, force falling.
+        if (this.stateMachine.isCurrentState('climb') && this.ladderOverlapTtlMs <= 0) {
+            this.currentLadder = null;
+            this.ladderSnapX = null;
+            this.exitClimbPhysics();
+            this.stateMachine.setState('falling');
+        }
 
         if (this.inputHandler.isJustDown('R1')) {
             this.handleChangeCurrentWeapon();

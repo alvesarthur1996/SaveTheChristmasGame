@@ -25,6 +25,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "typeRoots": [
+    "./src/types",
+    "./node_modules/@types",
     "./node_modules/phaser/types"
   ],
   "types": [
@@ -34,5 +36,12 @@
     "src",
     "node_modules/@types",
     "node_modules/phaser/types"
+  ],
+  "exclude": [
+    "**/*.tsx",
+    "src/assets/**/*.tsx",
+    "src/assets/**/*.tmx",
+    "src/assets/**/*.tsj",
+    "src/assets/**/*.xml"
   ]
 }

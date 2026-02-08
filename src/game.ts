@@ -15,6 +15,7 @@ import TitleScreen from './scenes/titleScreen';
 import ColdMountainsStage from './scenes/stages/coldMountains';
 import StageComplete from './scenes/stageComplete';
 import { PauseMenu } from './scenes/ui/pauseMenu';
+import AnimatedTiles from 'phaser-animated-tiles/src/plugin/main.js';
 // import MainMenuScene from './scenes/menus/mainMenu';
 // import PlayScene from './scenes/play/playScene';
 
@@ -34,6 +35,7 @@ const matterCollision = {
 declare module "phaser" {
   interface Scene {
     [matterCollision.mapping]: PhaserMatterCollisionPlugin;
+    animatedTiles: AnimatedTiles;
   }
   /* eslint-disable @typescript-eslint/no-namespace */
   namespace Scenes {
@@ -75,7 +77,14 @@ const config: Phaser.Types.Core.GameConfig = {
     StageComplete
   ],
   plugins: {
-    scene: [matterCollision]
+    scene: [
+      matterCollision,
+      {
+        key: 'animatedTiles',
+        plugin: AnimatedTiles,
+        mapping: 'animatedTiles'
+      }
+    ]
   },
   physics: {
     default: 'matter',

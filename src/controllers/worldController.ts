@@ -41,6 +41,17 @@ export default class WorldController {
         return this.mapTileset;
     }
 
+    /**
+     * Exposes the mounted Tilemap instance.
+     * Needed by systems/plugins (e.g. Tiled Animated Tiles) that must read tileset animation metadata.
+     */
+    public getMap(): Phaser.Tilemaps.Tilemap {
+        if (!this.mapTileset) {
+            throw new Error('Map tileset is not mounted. Call mountMap() before getMap().');
+        }
+        return this.mapTileset;
+    }
+
     public getObjectLayer(layerName: string = 'objects'): Phaser.Tilemaps.ObjectLayer | null {
         if (!this.mapTileset) {
             console.warn('Map tileset is not mounted. Call mountMap() before accessing object layers.');

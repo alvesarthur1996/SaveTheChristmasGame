@@ -7,13 +7,12 @@ import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
 import Boss from "../../utils/boss";
-import GameEvents, { HealthChange, RoomEvents, WeaponEnergyChange } from "../../utils/events";
+import GameEvents, { HealthChange, WeaponEnergyChange } from "../../utils/events";
 import DefaultScene from "../defaultScene";
-import RudolphTheRedController from "../../controllers/characters/bosses/rudolphTheRedController";
-import YetiController from "../../controllers/characters/bosses/yetiController";
-import { createParallaxImage } from "../../utils/functions";
 import CameraController from "../../controllers/cameraController";
 import WorldController from "../../controllers/worldController";
+import { createParallaxImage } from "../../utils/functions";
+import { startAnimatedTilesOnLayer } from "../../utils/animatedTiles";
 
 export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
@@ -55,9 +54,8 @@ export default class CandyLandStage extends DefaultScene {
 
         /* Map Setup */
         const mapTilesetKeys: string[] = ['tileset_candy', 'other_candy_blocks', 'tiles_test', 'new_candy_options', 'boss_doors'];
-        const backgroungLayer: string = 'background';
+        const backgroundLayer: string = 'background';
         const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'room_7', 'boss_gate', 'boss_room'];
-        // const tilemapLayers: string[] = ['room_1', 'room_2', 'room_3', 'room_4', 'room_5', 'room_6', 'boss_room'];
         const worldController = new WorldController(this, StageSlugs.CandyLand, mapTilesetKeys, this.tile_size);
         
         try {
@@ -89,7 +87,10 @@ export default class CandyLandStage extends DefaultScene {
                 createParallaxImage(this, 2, backgroundImage, 0.35, -80);
             }
 
-            worldController.createLayers(tilemapLayers, backgroungLayer);
+            worldController.createLayers(tilemapLayers, backgroundLayer);
+
+            const map = worldController.getMap();
+            startAnimatedTilesOnLayer(this, map, backgroundLayer);
 
             this.mountCameraSetup();
 

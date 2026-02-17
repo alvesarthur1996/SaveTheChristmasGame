@@ -5,7 +5,7 @@ import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 
 export default class MadFactoryStage extends Phaser.Scene {
-    private playerController?: PlayerController;
+    public playerController?: PlayerController;
     private obstacles!: ObstaclesController;
     private enemies!: Array<EnemyController>;
     private room_cameras: any = {};

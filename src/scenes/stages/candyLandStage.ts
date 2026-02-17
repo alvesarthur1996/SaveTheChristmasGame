@@ -15,7 +15,7 @@ import { createParallaxImage } from "../../utils/functions";
 import { startAnimatedTilesOnLayer } from "../../utils/animatedTiles";
 
 export default class CandyLandStage extends DefaultScene {
-    private playerController?: PlayerController;
+    public playerController?: PlayerController;
     private bossController: any;
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;

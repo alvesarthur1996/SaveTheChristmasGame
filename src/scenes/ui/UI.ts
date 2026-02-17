@@ -6,7 +6,7 @@ import PlayerController from '../../controllers/characters/playerController';
 
 export default class UI extends Phaser.Scene {
     private lifeTankLabel!: Phaser.GameObjects.Text;
-    private playerController?: PlayerController;
+    public playerController?: PlayerController;
     private currentWeapon!: Phaser.GameObjects.Text;
 
     private bossEnergyBar!: Phaser.GameObjects.Image;
@@ -17,15 +17,13 @@ export default class UI extends Phaser.Scene {
         super({ key: 'UI' });
     }
 
+    public getPlayerController(): PlayerController | undefined {
+        return this.playerController;
+    }
+
     create() {
         // Get reference to the player controller
-        const activeScene = this.scene.manager.getScenes(true).find(scene =>
-            scene.scene.key !== 'UI'
-        );
-        if (activeScene) {
-            // @ts-ignore - We know this exists in our game scenes
-            this.playerController = activeScene.playerController;
-        }
+        this.resolvePlayerController();
 
         // Initialize UI elements
         this.currentWeapon = this.add.text(5, 5, Weapons.SnowBuster);
@@ -49,6 +47,12 @@ export default class UI extends Phaser.Scene {
         events.on(GameEvents.GamePaused, this.handlePause, this);
         events.on(GameEvents.GameResumed, this.handleResume, this);
 
+        // Re-resolve controller when UI wakes (e.g. stage created player after UI)
+        this.events.on(Phaser.Scenes.Events.WAKE, this.resolvePlayerController, this);
+
+        // Also re-resolve when game pauses (PauseMenu opens after player exists)
+        events.on(GameEvents.GamePaused, this.resolvePlayerController, this);
+
         // Cleanup on shutdown
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             events.off(GameEvents.CollectLifeTank, this.updateLifeTanks, this);
@@ -60,7 +64,24 @@ export default class UI extends Phaser.Scene {
             events.off(GameEvents.WeaponEnergyChanged, this.weaponEnergyChanged, this);
             events.off(GameEvents.GamePaused, this.handlePause, this);
             events.off(GameEvents.GameResumed, this.handleResume, this);
+            this.events.off(Phaser.Scenes.Events.WAKE, this.resolvePlayerController, this);
+            events.off(GameEvents.GamePaused, this.resolvePlayerController, this);
         });
+    }
+
+    private resolvePlayerController() {
+        const activeScene = this.scene.manager.getScenes(true).find(scene =>
+            scene.scene.key !== 'UI' && scene.scene.key !== 'PauseMenu'
+        ) as any;
+
+        if (activeScene?.playerController) {
+            this.playerController = activeScene.playerController as PlayerController;
+        }
+
+        // Update label immediately if it exists
+        if (this.lifeTankLabel) {
+            this.lifeTankLabel.text = `Life Tanks: ${this.playerController?.getLifeTanks() ?? 0}`;
+        }
     }
 
     private handlePause(): void {
@@ -71,6 +92,7 @@ export default class UI extends Phaser.Scene {
     private handleResume(): void {
         // Resume UI animations or tweens
         this.tweens.resumeAll();
+        this.resolvePlayerController();
     }
 
     private setWeaponEnergyBar({ weaponName, weaponEnergy }: { weaponName: Weapons, weaponEnergy: number | null }) {
@@ -104,6 +126,7 @@ export default class UI extends Phaser.Scene {
     }
 
     private healthChanged(value: number) {
+        if (!this.playerController) this.resolvePlayerController();
         this.setHealthBar(value)
     }
 
@@ -112,6 +135,8 @@ export default class UI extends Phaser.Scene {
     }
 
     private updateLifeTanks() {
+        // Ensure controller is resolved even if UI was created before stage spawned the player.
+        if (!this.playerController) this.resolvePlayerController();
         if (this.playerController) {
             this.lifeTankLabel.text = `Life Tanks: ${this.playerController.getLifeTanks()}`
         }

@@ -11,7 +11,7 @@ import YetiController from "../../controllers/characters/bosses/yetiController";
 import { createParallaxImage } from "../../utils/functions";
 
 export default class ColdMountainsStage extends DefaultScene {
-    private playerController?: PlayerController;
+    public playerController?: PlayerController;
     private bossController: any;
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;

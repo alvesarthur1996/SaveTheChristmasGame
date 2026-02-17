@@ -2,6 +2,8 @@ import { GameUtils } from "../../utils/constant";
 import { loadGameState } from "../../utils/gameState";
 import { loadOptions } from "../../utils/options";
 import Stages from "../../utils/stages";
+import { getAssetBaseUrl } from '../../utils/runtimeConfig';
+
 export default class LoadingScene extends Phaser.Scene {
     constructor() {
         super({
@@ -23,7 +25,8 @@ export default class LoadingScene extends Phaser.Scene {
                 this.cache.json.add('gameState', options);
             });
 
-        this.load.baseURL = "http://localhost:8080/static/"
+        // Use runtime-configured base URL so Electron builds can use relative paths
+        this.load.baseURL = getAssetBaseUrl();
         this.loadImages();
         this.loadSprites();
         this.loadAudios();
@@ -69,7 +72,7 @@ export default class LoadingScene extends Phaser.Scene {
         this.cameras.main.fadeIn(1000, 0, 0, 0);
 
         setTimeout(() => {
-            this.cameras.main.fadeOut(1000, 0, 0, 0, (camera: any, progress: any) => {
+            this.cameras.main.fadeOut(1000, 0, 0, 0, (_camera: any, progress: any) => {
                 if (progress === 1) {
                     // this.scene.start(Stages.TitleScreen);
                     // this.scene.start(Stages.StageComplete);

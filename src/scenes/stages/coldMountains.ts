@@ -1,6 +1,5 @@
 import { Tilemaps } from "phaser";
 import PlayerController from "../../controllers/characters/playerController";
-import EnemyController from "../../controllers/enemies/enemyController";
 import ObstaclesController from "../../controllers/obsctaclesController";
 import Stages from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
@@ -9,22 +8,24 @@ import GameEvents, { HealthChange, RoomEvents } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import YetiController from "../../controllers/characters/bosses/yetiController";
 import { createParallaxImage } from "../../utils/functions";
+import { getAssetBaseUrl } from '../../utils/runtimeConfig';
 
 export default class ColdMountainsStage extends DefaultScene {
     public playerController?: PlayerController;
     private bossController: any;
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;
-    private enemies!: Array<EnemyController>;
+    // enemies array reserved for future enemies; currently unused in ColdMountains
+    // private enemies!: Array<EnemyController>;
     private tile_size = 16;
     private room_cameras: any = {};
     private stage: any = {};
 
-
-    private parallax_bg: any = [];
+    // parallax_bg reserved for later; not used yet
+    // private parallax_bg: any = [];
     constructor() {
         super(Stages.ColdMountains);
-        this.enemies = [];
+        // this.enemies = [];
         this.obstacles = new ObstaclesController();
         this.interactions = new InteractionsController();
     }
@@ -34,7 +35,8 @@ export default class ColdMountainsStage extends DefaultScene {
     }
 
     preload() {
-        this.load.baseURL = 'http://localhost:8080/static/'
+        // Use runtime-configured base URL so Electron builds can use relative paths
+        this.load.baseURL = getAssetBaseUrl();
         this.load.tilemapTiledJSON('cold_mountains', 'maps/cold_mountains/cold_mountains.json');
     }
 

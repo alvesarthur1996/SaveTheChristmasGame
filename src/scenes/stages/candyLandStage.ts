@@ -1,6 +1,6 @@
 import { Tilemaps } from "phaser";
 import PlayerController from "../../controllers/characters/playerController";
-import EnemyController from "../../controllers/enemies/enemyController";
+// EnemyController import removed: CandyLand currently has no enemies
 import ObstaclesController from "../../controllers/obsctaclesController";
 import Stages, { StageSlugs } from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
@@ -13,19 +13,20 @@ import CameraController from "../../controllers/cameraController";
 import WorldController from "../../controllers/worldController";
 import { createParallaxImage } from "../../utils/functions";
 import { startAnimatedTilesOnLayer } from "../../utils/animatedTiles";
+import { getAssetBaseUrl } from '../../utils/runtimeConfig';
 
 export default class CandyLandStage extends DefaultScene {
     public playerController?: PlayerController;
     private bossController: any;
     private obstacles!: ObstaclesController;
     private interactions!: InteractionsController;
-    private enemies!: Array<EnemyController>;
+    // enemies array reserved for future enemies; currently unused in CandyLandStage
+    // private enemies!: Array<EnemyController>;
     private tile_size = 16;
     private gameCamera: CameraController;
 
     constructor() {
         super(Stages.CandyLand);
-        this.enemies = [];
         this.obstacles = new ObstaclesController();
         this.interactions = new InteractionsController();
         this.gameCamera = new CameraController();
@@ -36,7 +37,8 @@ export default class CandyLandStage extends DefaultScene {
     }
 
     preload() {
-        this.load.baseURL = 'http://localhost:8080/static/'
+        // Use runtime-configured base URL so Electron builds can use relative paths
+        this.load.baseURL = getAssetBaseUrl();
         this.load.tilemapTiledJSON(StageSlugs.CandyLand, 'maps/candy_land/candy_land.json');
     }
 

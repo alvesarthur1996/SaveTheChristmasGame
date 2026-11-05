@@ -79,4 +79,12 @@ export default class MM6PlayerMovementAdapter {
         this.simulation.setPosition(x, y);
         this.previousPosition = { x, y };
     }
+
+    applyKnockback(velocityX: number, velocityY: number, steps: number): void {
+        this.simulation.applyKnockback(velocityX, velocityY, steps);
+    }
+
+    getState(): Readonly<MM6PlayerState> {
+        return this.simulation.getState();
+    }
 }

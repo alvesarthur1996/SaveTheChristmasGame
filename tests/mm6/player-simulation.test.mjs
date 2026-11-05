@@ -431,3 +431,26 @@ test('ladder top does not block a player walking beside the ladder', () => {
     }
     assert.ok(simulation.getState().y > 100);
 });
+
+test('knockback pushes the player away, ignores input during hitstun and then restores control', () => {
+    const simulation = new MM6PlayerSimulation(createFloorWorld(), { x: 48, y: 72 }, config());
+    settleOnFloor(simulation);
+    const startX = simulation.getState().x;
+
+    simulation.applyKnockback(-1, -1.8, 5);
+    for (let step = 0; step < 5; step++) {
+        simulation.step(frame({ right: true, jump: true, events: [{ button: 'jump', type: 'pressed' }] }));
+    }
+    const stunned = simulation.getState();
+    assert.ok(stunned.x < startX - 4);
+
+    for (let step = 0; step < 40; step++) {
+        simulation.step(frame());
+    }
+    const recovered = simulation.getState();
+    assert.equal(recovered.grounded, true);
+
+    const afterX = recovered.x;
+    simulation.step(frame({ right: true }));
+    assert.ok(simulation.getState().x > afterX);
+});

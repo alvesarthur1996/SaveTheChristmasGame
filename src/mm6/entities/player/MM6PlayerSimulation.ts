@@ -53,6 +53,18 @@ export default class MM6PlayerSimulation {
     private canHoldJump = false;
     private climbing = false;
     private ladderLocked = false;
+    private hitstunSteps = 0;
+    private knockbackVelocityX = 0;
+
+    applyKnockback(velocityX: number, velocityY: number, steps: number): void {
+        this.climbing = false;
+        this.ladderLocked = true;
+        this.canHoldJump = false;
+        this.hitstunSteps = steps;
+        this.knockbackVelocityX = velocityX;
+        this.state.velocityY = velocityY;
+        this.state.grounded = false;
+    }
 
     constructor(
         private readonly world: MM6CollisionWorld,
@@ -92,6 +104,7 @@ export default class MM6PlayerSimulation {
     }
 
     setPosition(x: number, y: number): void {
+        this.hitstunSteps = 0;
         if (![x, y].every(Number.isFinite)) {
             throw new RangeError('Player position must be finite.');
         }
@@ -111,6 +124,15 @@ export default class MM6PlayerSimulation {
     }
 
     step(input: MM6InputFrame): Readonly<MM6PlayerState> {
+        const stunned = this.hitstunSteps > 0;
+        if (stunned) {
+            this.hitstunSteps--;
+            input = {
+                held: { ...input.held, left: false, right: false, up: false, down: false, jump: false },
+                events: [],
+            };
+        }
+
         if (!input.held.up && !input.held.down) {
             this.ladderLocked = false;
         }
@@ -150,7 +172,9 @@ export default class MM6PlayerSimulation {
         const horizontalDirection = Number(input.held.right) - Number(input.held.left);
         const jumpPressed = input.events.some(event => event.button === 'jump' && event.type === 'pressed');
 
-        this.state.velocityX = horizontalDirection * this.config.horizontalSpeed;
+        this.state.velocityX = stunned
+            ? this.knockbackVelocityX
+            : horizontalDirection * this.config.horizontalSpeed;
         if (horizontalDirection !== 0) {
             this.state.facing = horizontalDirection < 0 ? -1 : 1;
         }

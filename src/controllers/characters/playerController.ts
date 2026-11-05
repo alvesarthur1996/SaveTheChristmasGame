@@ -102,6 +102,9 @@ export default class PlayerController {
 
     // Climb tuning
     private static readonly LADDER_CLIMB_SPEED = 1.05;
+    private static readonly MM6_KNOCKBACK_SPEED = 0.8;
+    private static readonly MM6_KNOCKBACK_LIFT = -1.8;
+    private static readonly MM6_HITSTUN_STEPS = 20;
 
     // Save/restore collision body scale while climbing ladders (idempotent)
     private climbBodyScaled = false;
@@ -440,12 +443,20 @@ export default class PlayerController {
         this.stateMachine.setState('idle');
 
         if (this.lastEnemy) {
-            if (this.sprite.x < this.lastEnemy.x)
-                this.sprite.setVelocityX(-4.5);
-            else
-                this.sprite.setVelocityX(4.5);
+            const direction = this.sprite.x < this.lastEnemy.x ? -1 : 1;
+            if (this.mm6MovementActive && this.mm6Movement) {
+                this.mm6Movement.applyKnockback(
+                    direction * PlayerController.MM6_KNOCKBACK_SPEED,
+                    PlayerController.MM6_KNOCKBACK_LIFT,
+                    PlayerController.MM6_HITSTUN_STEPS,
+                );
+            } else {
+                this.sprite.setVelocityX(direction * 4.5);
+            }
         }
-        this.sprite.setVelocityY(-2)
+        if (!this.mm6MovementActive) {
+            this.sprite.setVelocityY(-2)
+        }
         this.setHealth(this.health - (this.lastEnemyDamage ?? 3));
 
         const startColor = Phaser.Display.Color.ValueToColor(0xffffff)
@@ -695,8 +706,12 @@ export default class PlayerController {
         this.health = Phaser.Math.Clamp(value, 0, 28);
         events.emit(GameEvents.HealthChanged, this.health)
 
-        if (this.health == 0)
+        if (this.health == 0) {
+            if (this.mm6MovementActive && this.mm6Movement) {
+                this.finishMM6Movement(this.mm6Movement.getState());
+            }
             this.stateMachine.setState('death');
+        }
     }
 
     private createAnimations() {

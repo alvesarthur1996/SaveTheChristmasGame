@@ -539,8 +539,63 @@ export default class GingerMadController implements IBoss {
         this.removeCollisionListeners();
         this.sprite.destroy();
     }
+    private introActive = false;
+    private introLanding = false;
+    private introLanded = false;
+    private introCollisionMask = 0;
+
+    // Intro: the boss is not solid and slowly descends from the top of the screen,
+    // becoming solid again near the floor until it touches the ground.
+    public startIntro(landingY: number): void {
+        this.introActive = true;
+        this.introLanding = false;
+        this.introLanded = false;
+        this.introLandingY = landingY;
+        this.invencibility = true;
+        this.introCollisionMask = (this.sprite.body as MatterJS.BodyType).collisionFilter.mask;
+        this.sprite.setCollidesWith(0);
+        this.sprite.setIgnoreGravity(true);
+        this.sprite.setVelocity(0, 0);
+        this.sprite.setFrame('jump');
+    }
+
+    private introLandingY = 0;
+
+    public isIntroLanded(): boolean {
+        return this.introLanded;
+    }
+
+    public finishIntro(): void {
+        this.introActive = false;
+        this.invencibility = false;
+        this.actionTime = 0;
+    }
+
+    private updateIntro(): void {
+        if (this.introLanded) return;
+
+        if (!this.introLanding && this.sprite.y >= this.introLandingY) {
+            this.introLanding = true;
+            this.sprite.setCollidesWith(this.introCollisionMask);
+        }
+
+        this.sprite.setVelocityX(0);
+        this.sprite.setVelocityY(0.9);
+
+        if (this.introLanding && this.isTouching.ground) {
+            this.introLanded = true;
+            this.sprite.setIgnoreGravity(false);
+            this.sprite.setVelocity(0, 0);
+            this.sprite.play('idle');
+        }
+    }
+
     update(_time: number, dt: number) {
         if (this.destroyed) return;
+        if (this.introActive) {
+            this.updateIntro();
+            return;
+        }
         this.stateMachine.update(dt);
         if (this.player)
             this.fightMode(dt);

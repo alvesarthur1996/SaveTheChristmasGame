@@ -16,6 +16,9 @@ import { startAnimatedTilesOnLayer } from "../../utils/animatedTiles";
 import MM6TilemapCollisionWorld from "../../mm6/engine/collision/MM6TilemapCollisionWorld";
 import BossDoorController from "../../controllers/bossDoorController";
 
+// Test spawn in room_7 (the room before the boss corridor), enabled with `?spawn=room7`.
+const ROOM_7_FORCED_SPAWN = { x: 1330, y: 776 };
+
 export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
     private bossController: any;
@@ -26,6 +29,7 @@ export default class CandyLandStage extends DefaultScene {
     private gameCamera: CameraController;
     private movementWorld?: MM6TilemapCollisionWorld;
     private bossDoors: BossDoorController[] = [];
+    private bossRoomShade?: Phaser.GameObjects.Rectangle;
     private doorCrossing: { door: BossDoorController; walkToX: number; holdUntilBoss: boolean } | null = null;
 
     constructor() {
@@ -46,6 +50,9 @@ export default class CandyLandStage extends DefaultScene {
     }
 
     create() {
+        this.bossRoomShade = undefined;
+        this.doorCrossing = null;
+        this.bossDoors = [];
         /* Background Music */
         const bgm = this.sound.add(StageSlugs.CandyLand + '_stage', { loop: true, volume: 0.45 * (this.SoundOptions.BGM / 10) }); bgm.play();
         let sound = this.sound.get(StageSlugs.CandyLand + '_stage');
@@ -170,8 +177,17 @@ export default class CandyLandStage extends DefaultScene {
                     if (this.playerController.spawnPosition.x == 0 && this.playerController.spawnPosition.y == 0)
                         this.playerController.spawnPosition = { x, y };
 
+                    if (new URLSearchParams(window.location.search).get('spawn') === 'room7') {
+                        this.playerController.spawnPosition = ROOM_7_FORCED_SPAWN;
+                        worldController.setRoomVisibliity('room_7', true);
+                        worldController.showRoom('boss_gate');
+                    }
+
                     this.playerController.setSpritePosition(this.playerController.spawnPosition.x, this.playerController.spawnPosition.y);
                     this.gameCamera.playerSpawnCamera(this.playerController.getSprite());
+                    if (new URLSearchParams(window.location.search).get('spawn') === 'room7') {
+                        this.gameCamera.setRoomBounds('room_7');
+                    }
                     break;
                 case 'spawn_zone_2':
                     const new_spawn: MatterJS.BodyType = this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {
@@ -345,8 +361,9 @@ export default class CandyLandStage extends DefaultScene {
                             // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
                             // let gingerMad = new YetiController(this, this.playerController!.getSprite());
                             this.bossController = gingerMad;
-                            this.bossController.setSpritePosition(x + 220, y + 50);
-                            events.emit(GameEvents.BossArrived, 28)
+                            this.bossController.setSpritePosition(x + 220, 548);
+                            this.bossController.startIntro(y + 50);
+                            events.emit(GameEvents.BossArrived, 0)
 
                             // Re-send boss attack markers now that the boss is alive and listening.
                             // (EventEmitter doesn't buffer events emitted earlier in `create()`.)
@@ -368,8 +385,8 @@ export default class CandyLandStage extends DefaultScene {
                             });
 
                             console.log("Boss activation");
-                            this.releaseDoorCrossing();
-                        }, 2000);
+                            this.waitBossLanding(gingerMad);
+                        }, 1800);
                     });
                     break;
                 case 'weapon_energy':
@@ -441,7 +458,7 @@ export default class CandyLandStage extends DefaultScene {
 
         const doorColumns = [
             { tileX: 96, walkDistance: 72, holdUntilBoss: false },
-            { tileX: 119, walkDistance: 128, holdUntilBoss: true },
+            { tileX: 119, walkDistance: 72, holdUntilBoss: true },
         ];
         const firstRow = 40;
         const tileCount = 5;
@@ -460,6 +477,7 @@ export default class CandyLandStage extends DefaultScene {
                 tileSize: this.tile_size,
                 direction: 1,
                 onOpening: () => {
+                    if (holdUntilBoss) this.fadeBossRoom(true, 2200);
                     this.doorCrossing = {
                         door,
                         walkToX: (tileX + 0.5) * this.tile_size + walkDistance,
@@ -495,6 +513,52 @@ export default class CandyLandStage extends DefaultScene {
     private releaseDoorCrossing() {
         this.doorCrossing = null;
         this.playerController?.setScriptedInput(null);
+    }
+
+    // Boss intro: wait for the landing, fill the boss bar one unit at a time,
+    // then give control back to the player.
+    private waitBossLanding(boss: GingerMadController) {
+        const landingCheck = this.time.addEvent({
+            delay: 50,
+            loop: true,
+            callback: () => {
+                if (!boss.isIntroLanded()) return;
+                landingCheck.remove(false);
+
+                this.fadeBossRoom(false, 1800, () => {
+                    let fill = 0;
+                    this.time.addEvent({
+                        delay: 100,
+                        repeat: 27,
+                        callback: () => {
+                            fill++;
+                            events.emit(GameEvents.BossHealthChanged, fill);
+                            if (fill >= 28) {
+                                // Boss and player are released in the same tick.
+                                boss.finishIntro();
+                                this.releaseDoorCrossing();
+                            }
+                        },
+                    });
+                });
+            },
+        });
+    }
+
+    // Dark overlay above the map/background (depth 0) and below the characters (depth 2).
+    private fadeBossRoom(dark: boolean, duration: number, onComplete?: () => void) {
+        if (!this.bossRoomShade) {
+            this.bossRoomShade = this.add.rectangle(-50000, -50000, 100000, 100000, 0x000000, 1)
+                .setOrigin(0, 0)
+                .setAlpha(0)
+                .setDepth(1);
+        }
+        this.tweens.add({
+            targets: this.bossRoomShade,
+            alpha: dark ? 0.8 : 0,
+            duration,
+            onComplete,
+        });
     }
 
     private mountCameraSetup() {

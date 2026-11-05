@@ -10,8 +10,7 @@ export interface MM6PlayerSimulationConfig {
     hitboxHeight: number;
     horizontalSpeed: number;
     jumpVelocity: number;
-    jumpHoldAcceleration: number;
-    maxJumpVelocity: number;
+    jumpHoldSteps: number;
     gravity: number;
     maxFallSpeed: number;
     climbSpeed?: number;
@@ -41,9 +40,8 @@ export const DEFAULT_MM6_PLAYER_CONFIG: MM6PlayerSimulationConfig = {
     hitboxWidth: 19.2,
     hitboxHeight: 22.4,
     horizontalSpeed: 1.35,
-    jumpVelocity: -2.15,
-    jumpHoldAcceleration: 0.375,
-    maxJumpVelocity: -5.25,
+    jumpVelocity: -4.2,
+    jumpHoldSteps: 11,
     gravity: 0.34,
     maxFallSpeed: 5,
 };
@@ -51,6 +49,7 @@ export const DEFAULT_MM6_PLAYER_CONFIG: MM6PlayerSimulationConfig = {
 export default class MM6PlayerSimulation {
     private state: MM6PlayerState;
     private canHoldJump = false;
+    private jumpHoldRemaining = 0;
     private climbing = false;
     private ladderLocked = false;
     private hitstunSteps = 0;
@@ -75,15 +74,14 @@ export default class MM6PlayerSimulation {
             throw new RangeError('Initial player position must be finite.');
         }
         if (![config.tileSize, config.hitboxWidth, config.hitboxHeight, config.horizontalSpeed,
-            config.jumpVelocity, config.jumpHoldAcceleration, config.maxJumpVelocity,
+            config.jumpVelocity, config.jumpHoldSteps,
             config.gravity, config.maxFallSpeed].every(Number.isFinite)
             || config.tileSize <= 0
             || config.hitboxWidth <= 0
             || config.hitboxHeight <= 0
             || config.horizontalSpeed < 0
             || config.jumpVelocity >= 0
-            || config.jumpHoldAcceleration < 0
-            || config.maxJumpVelocity > config.jumpVelocity
+            || config.jumpHoldSteps < 0
             || config.gravity < 0
             || config.maxFallSpeed < 0) {
             throw new RangeError('Player movement configuration contains invalid values.');
@@ -184,17 +182,14 @@ export default class MM6PlayerSimulation {
             this.state.velocityY = this.config.jumpVelocity;
             this.state.grounded = false;
             this.canHoldJump = input.held.jump;
+            this.jumpHoldRemaining = this.config.jumpHoldSteps;
         } else if (this.state.grounded) {
             this.state.velocityY = 0;
             this.canHoldJump = false;
-        } else if (this.canHoldJump && this.state.velocityY < 0 && input.held.jump) {
-            this.state.velocityY = Math.max(
-                this.config.maxJumpVelocity,
-                this.state.velocityY - this.config.jumpHoldAcceleration,
-            );
-            if (this.state.velocityY <= this.config.maxJumpVelocity) {
-                this.canHoldJump = false;
-            }
+        } else if (this.canHoldJump && this.state.velocityY < 0 && input.held.jump && this.jumpHoldRemaining > 0) {
+            // Constant rise while the button is held, so the jump does not speed up mid-air.
+            this.state.velocityY = this.config.jumpVelocity;
+            this.jumpHoldRemaining--;
         } else {
             this.canHoldJump = false;
             this.state.velocityY = Math.min(

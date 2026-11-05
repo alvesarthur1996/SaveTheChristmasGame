@@ -153,7 +153,7 @@ test('holding jump extends ascent once but does not keep the player rising indef
     const simulation = new MM6PlayerSimulation(
         world,
         { x: 24, y: 72 },
-        config({ jumpHoldAcceleration: 1, gravity: 1, maxJumpVelocity: -4 }),
+        config({ jumpHoldSteps: 3, gravity: 1 }),
     );
     settleOnFloor(simulation);
 
@@ -211,7 +211,7 @@ test('high-speed jump stops at the nearest of multiple ceiling tiles', () => {
     const simulation = new MM6PlayerSimulation(
         world,
         { x: 24, y: 104 },
-        config({ jumpVelocity: -40, maxJumpVelocity: -40 }),
+        config({ jumpVelocity: -40 }),
     );
     settleOnFloor(simulation);
 

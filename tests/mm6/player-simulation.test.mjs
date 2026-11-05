@@ -329,3 +329,105 @@ test('player movement adapter exits its region at the player hitbox boundary', (
     assert.equal(update.state.x, 92);
     assert.equal(update.exitedRegion, true);
 });
+
+function ladderWorld() {
+    const world = createFloorWorld();
+    world.getLadderRectangles = () => [{ x: 40, y: 16, width: 16, height: 64 }];
+    return world;
+}
+
+function climbFrame(overrides = {}) {
+    const base = frame(overrides.base);
+    return { ...base, held: { ...base.held, ...overrides.held }, events: overrides.events ?? [] };
+}
+
+test('player mounts a ladder with up, ignores gravity and snaps to its center', () => {
+    const simulation = new MM6PlayerSimulation(ladderWorld(), { x: 44, y: 72 }, config());
+    settleOnFloor(simulation);
+
+    const startY = simulation.getState().y;
+    for (let step = 0; step < 10; step++) {
+        simulation.step(climbFrame({ held: { up: true } }));
+    }
+    const climbing = simulation.getState();
+    assert.equal(climbing.movement, 'climbing');
+    assert.equal(climbing.x, 48);
+    assert.ok(climbing.y < startY);
+
+    const heldY = climbing.y;
+    for (let step = 0; step < 10; step++) {
+        simulation.step(climbFrame());
+    }
+    assert.equal(simulation.getState().y, heldY);
+});
+
+test('jumping off a ladder releases it and falls until up/down is released', () => {
+    const simulation = new MM6PlayerSimulation(ladderWorld(), { x: 44, y: 72 }, config());
+    settleOnFloor(simulation);
+    for (let step = 0; step < 10; step++) {
+        simulation.step(climbFrame({ held: { up: true } }));
+    }
+
+    simulation.step(climbFrame({ held: { up: true }, events: [{ button: 'jump', type: 'pressed' }] }));
+    simulation.step(climbFrame({ held: { up: true } }));
+    assert.notEqual(simulation.getState().movement, 'climbing');
+});
+
+test('climbing past the ladder top steps the player out of the ladder', () => {
+    const simulation = new MM6PlayerSimulation(ladderWorld(), { x: 44, y: 72 }, config());
+    settleOnFloor(simulation);
+    for (let step = 0; step < 80 && simulation.getState().movement !== 'falling'; step++) {
+        simulation.step(climbFrame({ held: { up: true } }));
+    }
+    assert.notEqual(simulation.getState().movement, 'climbing');
+});
+
+test('climbing up ignores tiles beside the shaft and lets the player turn on the ladder', () => {
+    const world = ladderWorld();
+    world.setSolid(1, 3);
+    world.setSolid(4, 3);
+    const simulation = new MM6PlayerSimulation(world, { x: 44, y: 72 }, config());
+    settleOnFloor(simulation);
+    for (let step = 0; step < 10; step++) {
+        simulation.step(climbFrame({ held: { up: true } }));
+    }
+    const turned = simulation.step(climbFrame({ held: { left: true } }));
+    assert.equal(turned.facing, -1);
+    assert.equal(turned.movement, 'climbing');
+    assert.equal(turned.x, 48);
+});
+
+test('pressing down on top of a ladder climbs down through the floor', () => {
+    const world = createFloorWorld();
+    world.getLadderRectangles = () => [{ x: 40, y: 80, width: 16, height: 48 }];
+    const simulation = new MM6PlayerSimulation(world, { x: 48, y: 40 }, config());
+    settleOnFloor(simulation);
+    const startY = simulation.getState().y;
+
+    for (let step = 0; step < 20; step++) {
+        simulation.step(climbFrame({ held: { down: true } }));
+    }
+    const state = simulation.getState();
+    assert.equal(state.movement, 'climbing');
+    assert.ok(state.y > startY + 10);
+});
+
+test('ladder top acts as a one-way floor when landing from above', () => {
+    const world = new GridWorld();
+    world.getLadderRectangles = () => [{ x: 40, y: 80, width: 16, height: 48 }];
+    const simulation = new MM6PlayerSimulation(world, { x: 48, y: 40 }, config());
+    settleOnFloor(simulation);
+    const state = simulation.getState();
+    assert.equal(state.y + 8, 80);
+    assert.equal(state.grounded, true);
+});
+
+test('ladder top does not block a player walking beside the ladder', () => {
+    const world = new GridWorld();
+    world.getLadderRectangles = () => [{ x: 40, y: 80, width: 16, height: 48 }];
+    const simulation = new MM6PlayerSimulation(world, { x: 20, y: 40 }, config());
+    for (let step = 0; step < 60; step++) {
+        simulation.step(frame());
+    }
+    assert.ok(simulation.getState().y > 100);
+});

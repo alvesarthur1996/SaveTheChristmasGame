@@ -1,7 +1,8 @@
 import type MM6CollisionWorld from '../../engine/collision/MM6CollisionWorld.js';
+import type { MM6SolidRectangle } from '../../engine/collision/MM6CollisionWorld.js';
 import type { MM6InputFrame } from '../../engine/input/MM6InputFrame.js';
 
-export type MM6PlayerMovementState = 'idle' | 'walking' | 'jumping' | 'falling';
+export type MM6PlayerMovementState = 'idle' | 'walking' | 'jumping' | 'falling' | 'climbing';
 
 export interface MM6PlayerSimulationConfig {
     tileSize: number;
@@ -13,6 +14,7 @@ export interface MM6PlayerSimulationConfig {
     maxJumpVelocity: number;
     gravity: number;
     maxFallSpeed: number;
+    climbSpeed?: number;
 }
 
 export interface MM6PlayerState {
@@ -27,6 +29,11 @@ export interface MM6PlayerState {
 
 const COLLISION_EPSILON = 0.0001;
 const GROUND_PROBE_DISTANCE = 0.01;
+const LADDER_TOP_EXIT_MARGIN = 2;
+const LADDER_TOP_EXIT_LIFT = 4;
+const LADDER_TOP_ENTRY_DEPTH = 4;
+const LADDER_TOP_ENTRY_TOLERANCE = 3;
+const DEFAULT_CLIMB_SPEED = 1.05;
 
 export const DEFAULT_MM6_PLAYER_CONFIG: MM6PlayerSimulationConfig = {
     // Baseline-derived starting values, not verified Mega Man 6 constants.
@@ -34,7 +41,7 @@ export const DEFAULT_MM6_PLAYER_CONFIG: MM6PlayerSimulationConfig = {
     hitboxWidth: 19.2,
     hitboxHeight: 22.4,
     horizontalSpeed: 1.35,
-    jumpVelocity: -2.3,
+    jumpVelocity: -2.15,
     jumpHoldAcceleration: 0.375,
     maxJumpVelocity: -5.25,
     gravity: 0.34,
@@ -44,6 +51,8 @@ export const DEFAULT_MM6_PLAYER_CONFIG: MM6PlayerSimulationConfig = {
 export default class MM6PlayerSimulation {
     private state: MM6PlayerState;
     private canHoldJump = false;
+    private climbing = false;
+    private ladderLocked = false;
 
     constructor(
         private readonly world: MM6CollisionWorld,
@@ -97,9 +106,47 @@ export default class MM6PlayerSimulation {
             movement: 'falling',
         };
         this.canHoldJump = false;
+        this.climbing = false;
+        this.ladderLocked = false;
     }
 
     step(input: MM6InputFrame): Readonly<MM6PlayerState> {
+        if (!input.held.up && !input.held.down) {
+            this.ladderLocked = false;
+        }
+
+        if (!this.climbing && !this.ladderLocked
+            && (input.held.up || (input.held.down && !this.state.grounded))) {
+            const ladder = this.findLadder();
+            if (ladder) {
+                this.climbing = true;
+                this.state.x = ladder.x + ladder.width / 2;
+                this.state.velocityX = 0;
+                this.state.velocityY = 0;
+                this.state.grounded = false;
+                this.canHoldJump = false;
+            }
+        }
+
+        if (!this.climbing && !this.ladderLocked && input.held.down && this.state.grounded) {
+            const ladder = this.findLadderBelowFeet();
+            if (ladder) {
+                this.climbing = true;
+                this.state.x = ladder.x + ladder.width / 2;
+                this.state.y = ladder.y - this.config.hitboxHeight / 2 + LADDER_TOP_ENTRY_DEPTH;
+                this.state.velocityX = 0;
+                this.state.velocityY = 0;
+                this.state.grounded = false;
+                this.canHoldJump = false;
+            }
+        }
+
+        if (this.climbing) {
+            if (this.stepClimbing(input)) {
+                return this.getState();
+            }
+        }
+
         const horizontalDirection = Number(input.held.right) - Number(input.held.left);
         const jumpPressed = input.events.some(event => event.button === 'jump' && event.type === 'pressed');
 
@@ -143,6 +190,70 @@ export default class MM6PlayerSimulation {
         }
 
         return this.getState();
+    }
+
+    private findLadder(): MM6SolidRectangle | undefined {
+        const halfHeight = this.config.hitboxHeight / 2;
+        return (this.world.getLadderRectangles?.() ?? []).find(ladder =>
+            this.state.x >= ladder.x
+            && this.state.x <= ladder.x + ladder.width
+            && this.state.y + halfHeight > ladder.y
+            && this.state.y - halfHeight < ladder.y + ladder.height);
+    }
+
+    private findLadderBelowFeet(): MM6SolidRectangle | undefined {
+        const feet = this.state.y + this.config.hitboxHeight / 2;
+        return (this.world.getLadderRectangles?.() ?? []).find(ladder =>
+            this.state.x >= ladder.x
+            && this.state.x <= ladder.x + ladder.width
+            && Math.abs(feet - ladder.y) <= LADDER_TOP_ENTRY_TOLERANCE);
+    }
+
+    // Returns true when the step was fully handled by the ladder.
+    private stepClimbing(input: MM6InputFrame): boolean {
+        const releaseLadder = () => {
+            this.climbing = false;
+            this.ladderLocked = true;
+        };
+
+        const jumpPressed = input.events.some(event => event.button === 'jump' && event.type === 'pressed');
+        const ladder = this.findLadder();
+        if (!ladder || jumpPressed) {
+            releaseLadder();
+            this.state.velocityY = 0;
+            return false;
+        }
+
+        const halfHeight = this.config.hitboxHeight / 2;
+        const direction = Number(input.held.down) - Number(input.held.up);
+        const velocityY = direction * (this.config.climbSpeed ?? DEFAULT_CLIMB_SPEED);
+
+        if (velocityY < 0 && this.state.y + halfHeight + velocityY <= ladder.y + LADDER_TOP_EXIT_MARGIN) {
+            releaseLadder();
+            this.state.y -= LADDER_TOP_EXIT_LIFT;
+            this.state.velocityY = 0;
+            return false;
+        }
+
+        this.state.velocityX = 0;
+        this.state.velocityY = velocityY;
+        if (input.held.left !== input.held.right) {
+            this.state.facing = input.held.left ? -1 : 1;
+        }
+        if (velocityY < 0) {
+            // The hitbox is wider than the ladder, so ignore tiles beside the shaft while going up.
+            this.state.y += velocityY;
+        } else {
+            this.moveVertically(velocityY);
+        }
+        if (this.state.grounded && velocityY > 0) {
+            releaseLadder();
+            return false;
+        }
+
+        this.state.grounded = false;
+        this.state.movement = 'climbing';
+        return true;
     }
 
     private moveHorizontally(displacement: number): void {
@@ -312,6 +423,19 @@ export default class MM6PlayerSimulation {
             }
         }
 
+        if (!this.climbing && displacement > 0) {
+            // Ladder tops behave as one-way floors when landing from above.
+            const startBottom = startY + halfHeight;
+            for (const ladder of this.world.getLadderRectangles?.() ?? []) {
+                const centered = this.state.x >= ladder.x && this.state.x <= ladder.x + ladder.width;
+                if (centered && startBottom <= ladder.y + COLLISION_EPSILON && nextY + halfHeight > ladder.y) {
+                    nextY = Math.min(nextY, ladder.y - halfHeight);
+                    this.state.velocityY = 0;
+                    this.state.grounded = true;
+                }
+            }
+        }
+
         this.state.y = nextY;
     }
 
@@ -337,12 +461,21 @@ export default class MM6PlayerSimulation {
         }
 
         const feet = this.state.y + halfHeight;
-        return (this.world.getSolidRectangles?.() ?? []).some(rectangle => {
+        const onSolidRectangle = (this.world.getSolidRectangles?.() ?? []).some(rectangle => {
             const horizontalOverlap = right > rectangle.x + COLLISION_EPSILON
                 && left < rectangle.x + rectangle.width - COLLISION_EPSILON;
             const touchingTop = feet <= rectangle.y + COLLISION_EPSILON
                 && feet + GROUND_PROBE_DISTANCE >= rectangle.y;
             return horizontalOverlap && touchingTop;
         });
+        if (onSolidRectangle) {
+            return true;
+        }
+
+        return !this.climbing && (this.world.getLadderRectangles?.() ?? []).some(ladder =>
+            this.state.x >= ladder.x
+            && this.state.x <= ladder.x + ladder.width
+            && feet <= ladder.y + COLLISION_EPSILON
+            && feet + GROUND_PROBE_DISTANCE >= ladder.y);
     }
 }

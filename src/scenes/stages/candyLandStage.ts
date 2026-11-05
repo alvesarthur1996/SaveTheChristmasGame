@@ -104,9 +104,18 @@ export default class CandyLandStage extends DefaultScene {
                     width: object.width ?? 0,
                     height: object.height ?? 0,
                 }));
+            const ladderRectangles = (worldController.getObjectLayer()?.objects ?? [])
+                .filter(object => object.name === 'ladder')
+                .map(object => ({
+                    x: object.x ?? 0,
+                    y: object.y ?? 0,
+                    width: object.width ?? 0,
+                    height: object.height ?? 0,
+                }));
             this.movementWorld = new MM6TilemapCollisionWorld(
                 collisionLayers,
                 solidRectangles,
+                ladderRectangles,
             );
 
             this.mountCameraSetup();

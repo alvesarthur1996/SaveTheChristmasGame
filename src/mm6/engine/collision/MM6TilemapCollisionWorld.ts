@@ -7,12 +7,14 @@ export interface MM6TileCollisionLayer {
 
 export default class MM6TilemapCollisionWorld implements MM6CollisionWorld {
     private readonly solidRectangles: readonly MM6SolidRectangle[];
+    private readonly ladderRectangles: readonly MM6SolidRectangle[];
 
     constructor(
         private readonly layers: readonly MM6TileCollisionLayer[],
         solidRectangles: readonly MM6SolidRectangle[],
+        ladderRectangles: readonly MM6SolidRectangle[] = [],
     ) {
-        for (const rectangle of solidRectangles) {
+        for (const rectangle of [...solidRectangles, ...ladderRectangles]) {
             if (![rectangle.x, rectangle.y, rectangle.width, rectangle.height].every(Number.isFinite)
                 || rectangle.width <= 0
                 || rectangle.height <= 0) {
@@ -21,6 +23,11 @@ export default class MM6TilemapCollisionWorld implements MM6CollisionWorld {
         }
 
         this.solidRectangles = solidRectangles.map(rectangle => ({ ...rectangle }));
+        this.ladderRectangles = ladderRectangles.map(rectangle => ({ ...rectangle }));
+    }
+
+    getLadderRectangles(): readonly MM6SolidRectangle[] {
+        return this.ladderRectangles;
     }
 
     isSolidTile(tileX: number, tileY: number): boolean {

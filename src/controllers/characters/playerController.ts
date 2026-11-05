@@ -847,6 +847,8 @@ export default class PlayerController {
 
     private stageInteractionHandler(body: any) {
         if (body.label == 'ladder') {
+            if (this.mm6MovementActive) return true;
+
             // Only mount ladder with intentional input.
             const upDownPressed = this.inputHandler.isDown('up') || this.inputHandler.isDown('down');
 
@@ -1189,9 +1191,30 @@ export default class PlayerController {
             this.fireMM6Shot(state);
         }
 
+        if (this.checkMM6Hazards(state)) {
+            return;
+        }
+
         if (result.exitedRegion) {
             this.finishMM6Movement(state);
         }
+    }
+
+    private checkMM6Hazards(state: Readonly<MM6PlayerState>): boolean {
+        const halfWidth = this.sprite.width * 0.3;
+        const halfHeight = this.sprite.height * 0.35;
+        const touchesHazard = ['spike', 'pit', 'lethal'].some(name =>
+            this.obstacles.getBodies(name).some(body =>
+                state.x + halfWidth > body.bounds.min.x
+                && state.x - halfWidth < body.bounds.max.x
+                && state.y + halfHeight > body.bounds.min.y
+                && state.y - halfHeight < body.bounds.max.y));
+
+        if (touchesHazard) {
+            this.finishMM6Movement(state);
+            this.stateMachine.setState('spike_hit');
+        }
+        return touchesHazard;
     }
 
     private fireMM6Shot(state: Readonly<MM6PlayerState>): void {
@@ -1226,6 +1249,8 @@ export default class PlayerController {
             this.sprite.play('idle');
         } else if (state.movement === 'walking') {
             this.sprite.play('move');
+        } else if (state.movement === 'climbing') {
+            this.sprite.play('idle');
         } else {
             this.sprite.setFrame('jump');
         }

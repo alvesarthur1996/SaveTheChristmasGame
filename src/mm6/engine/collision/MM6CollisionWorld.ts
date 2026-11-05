@@ -8,4 +8,5 @@ export interface MM6SolidRectangle {
 export default interface MM6CollisionWorld {
     isSolidTile(tileX: number, tileY: number): boolean;
     getSolidRectangles?(): readonly MM6SolidRectangle[];
+    getLadderRectangles?(): readonly MM6SolidRectangle[];
 }

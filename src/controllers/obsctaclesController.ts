@@ -14,6 +14,13 @@ export default class ObstaclesController {
         this.obstacles.set(key, body);
     }
 
+    getBodies(name: string): MatterJS.BodyType[] {
+        const prefix = `${name}-`;
+        return [...this.obstacles.entries()]
+            .filter(([key]) => key.startsWith(prefix))
+            .map(([, body]) => body);
+    }
+
     is(name: string, body: MatterJS.BodyType) {
         const key = createKey(name, body.id)
         if (this.obstacles.has(key))

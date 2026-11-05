@@ -13,6 +13,7 @@ import CameraController from "../../controllers/cameraController";
 import WorldController from "../../controllers/worldController";
 import { createParallaxImage } from "../../utils/functions";
 import { startAnimatedTilesOnLayer } from "../../utils/animatedTiles";
+import MM6TilemapCollisionWorld from "../../mm6/engine/collision/MM6TilemapCollisionWorld";
 
 export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
@@ -22,6 +23,7 @@ export default class CandyLandStage extends DefaultScene {
     private enemies!: Array<EnemyController>;
     private tile_size = 16;
     private gameCamera: CameraController;
+    private movementWorld?: MM6TilemapCollisionWorld;
 
     constructor() {
         super(Stages.CandyLand);
@@ -91,6 +93,21 @@ export default class CandyLandStage extends DefaultScene {
 
             const map = worldController.getMap();
             startAnimatedTilesOnLayer(this, map, backgroundLayer);
+            const collisionLayers = tilemapLayers
+                .map(layerName => worldController.getRoomLayers(layerName))
+                .filter((layer): layer is Phaser.Tilemaps.TilemapLayer => layer !== null);
+            const solidRectangles = (worldController.getObjectLayer()?.objects ?? [])
+                .filter(object => object.name === 'wall')
+                .map(object => ({
+                    x: object.x ?? 0,
+                    y: object.y ?? 0,
+                    width: object.width ?? 0,
+                    height: object.height ?? 0,
+                }));
+            this.movementWorld = new MM6TilemapCollisionWorld(
+                collisionLayers,
+                solidRectangles,
+            );
 
             this.mountCameraSetup();
 
@@ -131,7 +148,12 @@ export default class CandyLandStage extends DefaultScene {
 
             switch (name) {
                 case 'spawn_zone':
-                    this.playerController = new PlayerController(this, this.obstacles, this.interactions);
+                    if (!this.movementWorld) {
+                        throw new Error('Candy Land collision world was not initialized.');
+                    }
+                    this.playerController = new PlayerController(this, this.obstacles, this.interactions, {
+                        collisionWorld: this.movementWorld,
+                    });
                     if (this.playerController.spawnPosition.x == 0 && this.playerController.spawnPosition.y == 0)
                         this.playerController.spawnPosition = { x, y };
 

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "declarationMap": false,
+    "outDir": "./tests/.build",
+    "rootDir": "./src/mm6",
+    "types": [],
+    "typeRoots": [],
+    "allowImportingTsExtensions": false
+  },
+  "include": [
+    "src/mm6/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

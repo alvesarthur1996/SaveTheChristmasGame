@@ -1,9 +1,8 @@
-import Phaser, { Textures } from 'phaser';
+import Phaser from 'phaser';
 import StateMachine from "../stateMachine";
 import { sharedInstance as events } from '../../scenes/eventCentre';
 import ObstaclesController from '../obsctaclesController';
 import { Bodies } from 'matter';
-import Scene from '../../scenes/scene';
 import GameEvents from '../../utils/events';
 import InteractionsController from '../interactionsController';
 import { Weapons } from '../../utils/weapons';
@@ -18,10 +17,14 @@ import InputHandler from '../joystick/inputHandler';
 import DefaultScene from '../../scenes/defaultScene';
 import YetiController from './bosses/yetiController';
 import Stages from '../../utils/stages';
-import UI from '../../scenes/ui/UI';
 import { Enemy } from '../../utils/enemies';
 import MetController from '../enemies/metController';
 import EnemyController from '../enemies/enemyController';
+import MM6PlayerMovementAdapter from '../../mm6/adapters/MM6PlayerMovementAdapter';
+import type { MM6PlayerMovementSetup } from '../../mm6/adapters/MM6PlayerMovementAdapter';
+import type { MM6Button } from '../../mm6/engine/input/MM6InputFrame';
+import { DEFAULT_MM6_PLAYER_CONFIG } from '../../mm6/entities/player/MM6PlayerSimulation';
+import type { MM6PlayerState } from '../../mm6/entities/player/MM6PlayerSimulation';
 
 export type Keys = {
     up: Phaser.Input.Keyboard.Key,
@@ -75,6 +78,12 @@ export default class PlayerController {
     private lastEnemyDamage?: number;
 
     private inputEnabled = true;
+    private mm6Movement?: MM6PlayerMovementAdapter;
+    private mm6MovementActive = false;
+    private mm6MovementRegionMaxX?: number;
+    private mm6ShotFrameUntil = 0;
+    private originalSensorStates?: boolean[];
+    private mm6VisualState?: MM6PlayerState['movement'];
 
     // Ladder / climb state helpers
     private ladderOverlaps: Set<MatterJS.BodyType> = new Set();
@@ -98,7 +107,12 @@ export default class PlayerController {
     private climbBodyScaled = false;
     private climbBodyScaleApplied = { x: 1, y: 1 };
 
-    constructor(scene: DefaultScene, obstacles: ObstaclesController, interactions: InteractionsController) {
+    constructor(
+        scene: DefaultScene,
+        obstacles: ObstaclesController,
+        interactions: InteractionsController,
+        movementSetup?: MM6PlayerMovementSetup,
+    ) {
         this.scene = scene;
         this.obstacles = obstacles;
         this.interactions = interactions;
@@ -162,6 +176,22 @@ export default class PlayerController {
             })
             .setState('idle');
 
+        if (movementSetup) {
+            this.mm6Movement = new MM6PlayerMovementAdapter({
+                ...movementSetup,
+                initialPosition: { x: this.sprite.x, y: this.sprite.y },
+                config: {
+                    ...DEFAULT_MM6_PLAYER_CONFIG,
+                    ...movementSetup.config,
+                    hitboxWidth: this.sprite.width * 0.6,
+                    hitboxHeight: this.sprite.height * 0.7,
+                },
+            });
+            this.mm6MovementRegionMaxX = movementSetup.regionMaxX;
+            this.mm6MovementActive = true;
+            this.setMM6MovementPhysics(true);
+        }
+
         this.weaponList.set(Weapons.SnowBuster, null);
 
         Object.keys(Weapons)
@@ -192,7 +222,6 @@ export default class PlayerController {
             callback: this.onSensorCollide,
             context: this
         });
-        this.scene.events.on("update", this.update, this);
         this.scene.events.once("shutdown", this.destroy, this);
         this.scene.events.once("destroy", this.destroy, this);
     }
@@ -1045,6 +1074,12 @@ export default class PlayerController {
 
     public setSpritePosition(x: number, y: number): void {
         this.sprite.setPosition(x, y);
+        this.mm6Movement?.setPosition(x, y);
+        if (this.mm6MovementActive
+            && this.mm6MovementRegionMaxX !== undefined
+            && x + this.sprite.width * 0.3 >= this.mm6MovementRegionMaxX) {
+            this.finishMM6Movement({ x, y, velocityX: 0, velocityY: 0, grounded: false, facing: 1, movement: 'falling' });
+        }
     }
 
     public getSprite(): Phaser.Physics.Matter.Sprite {
@@ -1103,7 +1138,11 @@ export default class PlayerController {
         }
 
         if (this.destroyed) return;
-        this.stateMachine.update(delta);
+        if (this.mm6MovementActive && this.mm6Movement) {
+            this.updateMM6Movement(delta);
+        } else {
+            this.stateMachine.update(delta);
+        }
 
         // Clear per-frame ladder overlap set AFTER processing states.
         this.ladderOverlaps.clear();
@@ -1125,11 +1164,112 @@ export default class PlayerController {
         }
     }
 
+    private updateMM6Movement(delta: number): void {
+        const movement = this.mm6Movement;
+        if (!movement) {
+            return;
+        }
+
+        const held: Record<MM6Button, boolean> = {
+            left: this.inputHandler.isDown('left'),
+            right: this.inputHandler.isDown('right'),
+            up: this.inputHandler.isDown('up'),
+            down: this.inputHandler.isDown('down'),
+            jump: this.inputHandler.isDown('A'),
+            attack: this.inputHandler.isDown('X'),
+        };
+        const result = movement.update(delta, held);
+        const state = result.state;
+
+        this.sprite.setPosition(result.renderPosition.x, result.renderPosition.y);
+        this.sprite.flipX = state.facing < 0;
+        this.renderMM6Movement(state);
+
+        if (this.inputHandler.isJustDown('X')) {
+            this.fireMM6Shot(state);
+        }
+
+        if (result.exitedRegion) {
+            this.finishMM6Movement(state);
+        }
+    }
+
+    private fireMM6Shot(state: Readonly<MM6PlayerState>): void {
+        const shoot = this.shoots.find(item => !item.active);
+        if (!shoot) {
+            return;
+        }
+
+        if (this.currentWeaponEnergy === null) {
+            shoot.fire(this.sprite);
+        } else if (this.currentWeaponEnergy >= 1) {
+            shoot.fire(this.sprite);
+            this.currentWeaponEnergy = Phaser.Math.Clamp(this.currentWeaponEnergy - shoot.consume, 0, 28);
+            events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+        } else {
+            return;
+        }
+
+        this.mm6ShotFrameUntil = this.scene.time.now + 250;
+    }
+
+    private renderMM6Movement(state: Readonly<MM6PlayerState>): void {
+        if (this.mm6VisualState === state.movement) {
+            if (state.movement === 'jumping' || state.movement === 'falling') {
+                this.sprite.setFrame(this.scene.time.now < this.mm6ShotFrameUntil ? 'jump_shot' : 'jump');
+            }
+            return;
+        }
+
+        this.mm6VisualState = state.movement;
+        if (state.movement === 'idle') {
+            this.sprite.play('idle');
+        } else if (state.movement === 'walking') {
+            this.sprite.play('move');
+        } else {
+            this.sprite.setFrame('jump');
+        }
+    }
+
+    private setMM6MovementPhysics(enabled: boolean): void {
+        const body = this.sprite.body as MatterJS.BodyType;
+        if (enabled) {
+            this.originalSensorStates = body.parts.map(part => part.isSensor);
+            body.isSensor = true;
+            body.parts.forEach(part => { part.isSensor = true; });
+            this.sprite.setIgnoreGravity(true);
+            this.sprite.setVelocity(0, 0);
+            return;
+        }
+
+        if (this.originalSensorStates) {
+            const sensorStates = this.originalSensorStates;
+            body.parts.forEach((part, index) => {
+                part.isSensor = sensorStates[index] ?? false;
+            });
+            body.isSensor = sensorStates[0] ?? false;
+            this.originalSensorStates = undefined;
+        }
+        this.sprite.setIgnoreGravity(false);
+    }
+
+    private finishMM6Movement(state: Readonly<MM6PlayerState>): void {
+        if (!this.mm6MovementActive) {
+            return;
+        }
+
+        this.mm6MovementActive = false;
+        this.sprite.setPosition(state.x, state.y);
+        this.setMM6MovementPhysics(false);
+        this.sprite.setVelocity(state.velocityX, state.velocityY);
+        this.speedY = state.velocityY;
+        this.stateMachine.setState(state.grounded ? 'idle' : 'falling');
+    }
+
     destroy() {
         this.destroyed = true;
 
         // Event listeners
-        this.scene.events.off("update", this.update, this);
         this.scene.events.off("shutdown", this.destroy, this);
         this.scene.events.off("destroy", this.destroy, this);
         if (this.scene.matter.world) {

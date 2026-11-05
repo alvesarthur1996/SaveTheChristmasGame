@@ -125,6 +125,6 @@ export default class MadFactoryStage extends Phaser.Scene {
     }
 
     update(time: number, delta: number): void {
-        this.playerController?.update(delta);
+        this.playerController?.update(time, delta);
     }
 };

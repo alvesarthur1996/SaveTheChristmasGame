@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "concurrently --kill-others \"vite\" \"nodemon ./server/server.js\"",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node ./node_modules/typescript/bin/tsc -p tsconfig.mm6-tests.json && node --test"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

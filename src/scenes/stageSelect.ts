@@ -169,7 +169,7 @@ export default class StageSelect extends DefaultScene {
     }
 
     private selectBoss(deltaX: number, deltaY: number) {
-        this.sound.play('cursor_move', { volume: 1 * (this.SoundOptions.SFX / 10) });
+        this.sound.play('menu_selector', { volume: 1 * (this.SoundOptions.SFX / 10) });
         this.selectedBossIndex.x = Phaser.Math.Clamp(this.selectedBossIndex.x + deltaX, 0, this.bossOptions[0].length - 1);
         this.selectedBossIndex.y = Phaser.Math.Clamp(this.selectedBossIndex.y + deltaY, 0, this.bossOptions.length - 1);
 

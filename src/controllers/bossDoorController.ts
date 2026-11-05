@@ -27,6 +27,7 @@ export default class BossDoorController {
     private state: DoorState = 'closed';
     private visibleTiles: number;
     private timer?: Phaser.Time.TimerEvent;
+    private sound?: Phaser.Sound.BaseSound;
 
     constructor(
         private readonly scene: Scene,
@@ -81,6 +82,7 @@ export default class BossDoorController {
 
     private open(): void {
         this.state = 'opening';
+        this.playSound();
         this.options.onOpening?.();
         this.runSteps(() => {
             this.visibleTiles--;
@@ -91,6 +93,7 @@ export default class BossDoorController {
 
     private close(sealAfter: boolean): void {
         this.state = 'closing';
+        this.playSound();
         this.runSteps(() => {
             this.setTile(this.visibleTiles, true);
             this.visibleTiles++;
@@ -98,11 +101,27 @@ export default class BossDoorController {
         }, () => { this.state = sealAfter ? 'sealed' : 'closed'; });
     }
 
+    private playSound(): void {
+        const sfx = (this.scene as unknown as { SoundOptions?: { SFX: number } }).SoundOptions?.SFX ?? 10;
+        this.getSound().play({ volume: sfx / 10 });
+    }
+
+    private getSound(): Phaser.Sound.BaseSound {
+        this.sound ??= this.scene.sound.add('boss_door');
+        return this.sound;
+    }
+
+    // Spreads the tile steps over the sound length so both end together.
+    private getStepDelay(): number {
+        const duration = this.getSound().duration;
+        return duration > 0 ? (duration * 1000) / this.options.tileCount : STEP_DELAY_MS;
+    }
+
     // Tiles disappear from the bottom up and return from the top down.
     private runSteps(step: () => boolean, onDone: () => void): void {
         this.timer?.remove(false);
         this.timer = this.scene.time.addEvent({
-            delay: STEP_DELAY_MS,
+            delay: this.getStepDelay(),
             loop: true,
             callback: () => {
                 if (step()) {

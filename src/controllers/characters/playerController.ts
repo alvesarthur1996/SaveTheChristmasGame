@@ -48,6 +48,9 @@ export type CollisionSensors = {
     bottom: Bodies,
 }
 
+const MM6_WALK_CYCLE = [1, 2, 3, 2];
+const MM6_WALK_FRAME_MS = 100;
+
 export default class PlayerController {
     private scene: DefaultScene;
     private sprite!: Phaser.Physics.Matter.Sprite;
@@ -83,6 +86,7 @@ export default class PlayerController {
     private mm6MovementActive = false;
     private mm6MovementRegionMaxX?: number;
     private mm6ShotFrameUntil = 0;
+    private mm6WalkStartedAt = 0;
     private originalSensorStates?: boolean[];
     private mm6VisualState?: MM6PlayerState['movement'];
 
@@ -950,6 +954,10 @@ export default class PlayerController {
     }
 
 
+    private playEnergyUpSound(): void {
+        this.scene.sound.play('energy_up', { volume: this.scene.SoundOptions.SFX / 10 });
+    }
+
     private interactiveItemsHandler(gameObject: Phaser.Physics.Matter.Sprite) {
         const sprite = gameObject as Phaser.Physics.Matter.Sprite
         const type = sprite.getData('type');
@@ -963,6 +971,7 @@ export default class PlayerController {
             case 'small_health':
                 const smallHp: number = sprite.getData('health') ?? 0;
                 this.health = Phaser.Math.Clamp(this.health + smallHp, 0, 28);
+                this.playEnergyUpSound();
                 events.emit(GameEvents.HealthChanged, this.health);
                 sprite.destroy();
                 break;
@@ -975,6 +984,7 @@ export default class PlayerController {
             case 'big_health':
                 const biglHp: number = sprite.getData('health') ?? 0;
                 this.health = Phaser.Math.Clamp(this.health + biglHp, 0, 28);
+                this.playEnergyUpSound();
                 events.emit(GameEvents.HealthChanged, this.health)
                 sprite.destroy();
                 break;
@@ -1271,9 +1281,14 @@ export default class PlayerController {
     }
 
     private renderMM6Movement(state: Readonly<MM6PlayerState>): void {
+        const now = this.scene.time.now;
+        const shooting = now < this.mm6ShotFrameUntil;
+
         if (this.mm6VisualState === state.movement) {
             if (state.movement === 'jumping' || state.movement === 'falling') {
-                this.sprite.setFrame(this.scene.time.now < this.mm6ShotFrameUntil ? 'jump_shot' : 'jump');
+                this.sprite.setFrame(shooting ? 'jump_shot' : 'jump');
+            } else if (state.movement === 'walking') {
+                this.setMM6WalkFrame(now, shooting);
             }
             return;
         }
@@ -1282,12 +1297,20 @@ export default class PlayerController {
         if (state.movement === 'idle') {
             this.sprite.play('idle');
         } else if (state.movement === 'walking') {
-            this.sprite.play('move');
+            // The walk cycle is driven by one clock so the shooting variant shows the same step.
+            this.sprite.anims.stop();
+            this.mm6WalkStartedAt = now;
+            this.setMM6WalkFrame(now, shooting);
         } else if (state.movement === 'climbing') {
             this.sprite.play('idle');
         } else {
             this.sprite.setFrame('jump');
         }
+    }
+
+    private setMM6WalkFrame(now: number, shooting: boolean): void {
+        const step = Math.floor((now - this.mm6WalkStartedAt) / MM6_WALK_FRAME_MS) % MM6_WALK_CYCLE.length;
+        this.sprite.setFrame(`${shooting ? 'run_shot_' : 'run_'}${MM6_WALK_CYCLE[step]}`);
     }
 
     private setMM6MovementPhysics(enabled: boolean): void {

@@ -532,6 +532,7 @@ export default class CandyLandStage extends DefaultScene {
                         repeat: 27,
                         callback: () => {
                             fill++;
+                            this.sound.play('energy_up', { volume: this.SoundOptions.SFX / 10 });
                             events.emit(GameEvents.BossHealthChanged, fill);
                             if (fill >= 28) {
                                 // Boss and player are released in the same tick.

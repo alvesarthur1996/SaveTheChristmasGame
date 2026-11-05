@@ -9,6 +9,7 @@ export default class MM6TilemapCollisionWorld implements MM6CollisionWorld {
     private readonly solidRectangles: readonly MM6SolidRectangle[];
     private readonly ladderRectangles: readonly MM6SolidRectangle[];
     private dynamicSolidProvider?: () => readonly MM6SolidRectangle[];
+    private readonly extraSolidProviders: Array<() => readonly MM6SolidRectangle[]> = [];
 
     constructor(
         private readonly layers: readonly MM6TileCollisionLayer[],
@@ -36,10 +37,18 @@ export default class MM6TilemapCollisionWorld implements MM6CollisionWorld {
     }
 
     getSolidRectangles(): readonly MM6SolidRectangle[] {
-        if (!this.dynamicSolidProvider) {
+        if (!this.dynamicSolidProvider && this.extraSolidProviders.length === 0) {
             return this.solidRectangles;
         }
-        return [...this.solidRectangles, ...this.dynamicSolidProvider()];
+        return [
+            ...this.solidRectangles,
+            ...(this.dynamicSolidProvider?.() ?? []),
+            ...this.extraSolidProviders.flatMap(provider => provider()),
+        ];
+    }
+
+    addDynamicSolidProvider(provider: () => readonly MM6SolidRectangle[]): void {
+        this.extraSolidProviders.push(provider);
     }
 
     setDynamicSolidProvider(provider: (() => readonly MM6SolidRectangle[]) | undefined): void {

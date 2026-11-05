@@ -60,6 +60,7 @@ export default class PlayerController {
     private controller!: JoystickProvider;
     private keyboard!: KeyboardProvider;
     private inputHandler!: InputHandler;
+    private scriptedInput: Partial<Record<MM6Button, boolean>> | null = null;
 
     private isTouching: TouchingDetection;
     private speedY = 0;
@@ -1182,20 +1183,28 @@ export default class PlayerController {
         }
     }
 
+    // Replaces the player's input (e.g. cutscenes); pass null to give control back.
+    public setScriptedInput(input: Partial<Record<MM6Button, boolean>> | null): void {
+        this.scriptedInput = input;
+    }
+
     private updateMM6Movement(delta: number): void {
         const movement = this.mm6Movement;
         if (!movement) {
             return;
         }
 
-        const held: Record<MM6Button, boolean> = {
-            left: this.inputHandler.isDown('left'),
-            right: this.inputHandler.isDown('right'),
-            up: this.inputHandler.isDown('up'),
-            down: this.inputHandler.isDown('down'),
-            jump: this.inputHandler.isDown('A'),
-            attack: this.inputHandler.isDown('X'),
-        };
+        const scripted = this.scriptedInput;
+        const held: Record<MM6Button, boolean> = scripted
+            ? { left: false, right: false, up: false, down: false, jump: false, attack: false, ...scripted }
+            : {
+                left: this.inputHandler.isDown('left'),
+                right: this.inputHandler.isDown('right'),
+                up: this.inputHandler.isDown('up'),
+                down: this.inputHandler.isDown('down'),
+                jump: this.inputHandler.isDown('A'),
+                attack: this.inputHandler.isDown('X'),
+            };
         const result = movement.update(delta, held);
         const state = result.state;
 
@@ -1203,7 +1212,7 @@ export default class PlayerController {
         this.sprite.flipX = state.facing < 0;
         this.renderMM6Movement(state);
 
-        if (this.inputHandler.isJustDown('X')) {
+        if (!scripted && this.inputHandler.isJustDown('X')) {
             this.fireMM6Shot(state);
         }
 

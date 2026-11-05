@@ -14,6 +14,7 @@ import WorldController from "../../controllers/worldController";
 import { createParallaxImage } from "../../utils/functions";
 import { startAnimatedTilesOnLayer } from "../../utils/animatedTiles";
 import MM6TilemapCollisionWorld from "../../mm6/engine/collision/MM6TilemapCollisionWorld";
+import BossDoorController from "../../controllers/bossDoorController";
 
 export default class CandyLandStage extends DefaultScene {
     private playerController?: PlayerController;
@@ -24,6 +25,8 @@ export default class CandyLandStage extends DefaultScene {
     private tile_size = 16;
     private gameCamera: CameraController;
     private movementWorld?: MM6TilemapCollisionWorld;
+    private bossDoors: BossDoorController[] = [];
+    private doorCrossing: { door: BossDoorController; walkToX: number; holdUntilBoss: boolean } | null = null;
 
     constructor() {
         super(Stages.CandyLand);
@@ -122,6 +125,7 @@ export default class CandyLandStage extends DefaultScene {
 
             this.gameCamera.setRoomBounds('room_1');
             this.handleObjects(worldController);
+            this.createBossDoors(worldController);
 
   
 
@@ -364,6 +368,7 @@ export default class CandyLandStage extends DefaultScene {
                             });
 
                             console.log("Boss activation");
+                            this.releaseDoorCrossing();
                         }, 2000);
                     });
                     break;
@@ -429,6 +434,69 @@ export default class CandyLandStage extends DefaultScene {
         });
     }
 
+    private createBossDoors(worldController: WorldController) {
+        const layer = worldController.getRoomLayers('boss_gate');
+        this.bossDoors = [];
+        if (!layer || !this.movementWorld) return;
+
+        const doorColumns = [
+            { tileX: 96, walkDistance: 72, holdUntilBoss: false },
+            { tileX: 119, walkDistance: 128, holdUntilBoss: true },
+        ];
+        const firstRow = 40;
+        const tileCount = 5;
+        this.bossDoors = [];
+
+        doorColumns.forEach(({ tileX, walkDistance, holdUntilBoss }) => {
+            const tile = layer.getTileAt(tileX, firstRow);
+            if (!tile) return;
+
+            const door: BossDoorController = new BossDoorController(this, {
+                layer,
+                tileX,
+                tileY: firstRow,
+                tileCount,
+                tileIndex: tile.index,
+                tileSize: this.tile_size,
+                direction: 1,
+                onOpening: () => {
+                    this.doorCrossing = {
+                        door,
+                        walkToX: (tileX + 0.5) * this.tile_size + walkDistance,
+                        holdUntilBoss,
+                    };
+                    this.playerController?.setScriptedInput({ right: true });
+                },
+            }, () => {
+                const sprite = this.playerController?.getSprite();
+                return sprite ? { x: sprite.x, y: sprite.y } : null;
+            });
+
+            this.bossDoors.push(door);
+            this.movementWorld!.addDynamicSolidProvider(() => door.getSolids());
+        });
+    }
+
+    // Forced walk through a door: the player stops past it and control returns
+    // once the door is sealed (or, for the boss door, once the boss has spawned).
+    private updateDoorCrossing() {
+        const crossing = this.doorCrossing;
+        const sprite = this.playerController?.getSprite();
+        if (!crossing || !sprite) return;
+
+        if (sprite.x >= crossing.walkToX) {
+            this.playerController!.setScriptedInput({});
+        }
+        if (!crossing.holdUntilBoss && crossing.door.isSealed()) {
+            this.releaseDoorCrossing();
+        }
+    }
+
+    private releaseDoorCrossing() {
+        this.doorCrossing = null;
+        this.playerController?.setScriptedInput(null);
+    }
+
     private mountCameraSetup() {
         // e.g this means the coordinates from top left; 
         // For X, we say is starting at tile 0;
@@ -448,6 +516,8 @@ export default class CandyLandStage extends DefaultScene {
 
     update(time: number, delta: number): void {
         this.playerController?.update(time, delta);
+        this.bossDoors.forEach(door => door.update());
+        this.updateDoorCrossing();
         this.bossController?.update(time, delta);
     }
 };

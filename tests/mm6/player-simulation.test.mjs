@@ -454,3 +454,18 @@ test('knockback pushes the player away, ignores input during hitstun and then re
     simulation.step(frame({ right: true }));
     assert.ok(simulation.getState().x > afterX);
 });
+
+test('dynamic solids such as ice blocks can be stood on and removed', () => {
+    const world = new MM6TilemapCollisionWorld([{ getTileAt: (x, y) => (y === 5 ? { collides: true } : null) }], []);
+    let blocks = [{ x: 56, y: 64, width: 16, height: 16 }];
+    world.setDynamicSolidProvider(() => blocks);
+    const simulation = new MM6PlayerSimulation(world, { x: 64, y: 40 }, config());
+    settleOnFloor(simulation);
+    assert.equal(simulation.getState().y + 8, 64);
+
+    blocks = [];
+    for (let step = 0; step < 20; step++) {
+        simulation.step(frame());
+    }
+    assert.equal(simulation.getState().y + 8, 80);
+});

@@ -191,6 +191,7 @@ export default class PlayerController {
                 },
             });
             this.mm6MovementRegionMaxX = movementSetup.regionMaxX;
+            movementSetup.collisionWorld.setDynamicSolidProvider?.(() => this.getIceBlockSolids());
             this.mm6MovementActive = true;
             this.setMM6MovementPhysics(true);
         }
@@ -1230,6 +1231,15 @@ export default class PlayerController {
             this.stateMachine.setState('spike_hit');
         }
         return touchesHazard;
+    }
+
+    private getIceBlockSolids() {
+        return this.shoots
+            .filter(shoot => shoot.name === Weapons.IceBlock && shoot.active && shoot.visible)
+            .map(shoot => {
+                const { min, max } = (shoot.body as MatterJS.BodyType).bounds;
+                return { x: min.x, y: min.y, width: max.x - min.x, height: max.y - min.y };
+            });
     }
 
     private fireMM6Shot(state: Readonly<MM6PlayerState>): void {

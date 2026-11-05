@@ -9,6 +9,7 @@ import GameEvents, { HealthChange, RoomEvents } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import YetiController from "../../controllers/characters/bosses/yetiController";
 import { createParallaxImage } from "../../utils/functions";
+import MM6TilemapCollisionWorld from "../../mm6/engine/collision/MM6TilemapCollisionWorld";
 
 export default class ColdMountainsStage extends DefaultScene {
     private playerController?: PlayerController;
@@ -19,6 +20,7 @@ export default class ColdMountainsStage extends DefaultScene {
     private tile_size = 16;
     private room_cameras: any = {};
     private stage: any = {};
+    private movementWorld?: MM6TilemapCollisionWorld;
 
 
     private parallax_bg: any = [];
@@ -73,6 +75,8 @@ export default class ColdMountainsStage extends DefaultScene {
             this.stage.room_4.setCollisionByProperty({ collision: true });
             console.log(this.stage)
 
+            this.movementWorld = this.createMovementWorld(objectLayer);
+
             this.cameras.main.setBounds(this.room_cameras.room_1.x, this.room_cameras.room_1.y, this.room_cameras.room_1.width, this.room_cameras.room_1.height);
             this.handleObjects(objectLayer);
 
@@ -112,13 +116,39 @@ export default class ColdMountainsStage extends DefaultScene {
         return map;
     }
 
+    private createMovementWorld(objectLayer: Tilemaps.ObjectLayer | null): MM6TilemapCollisionWorld {
+        // This map is infinite (negative origin), so resolve tiles by world position instead of layer indexes.
+        const tileSize = this.tile_size;
+        const layers = [this.stage.room_1, this.stage.room_2, this.stage.room_3, this.stage.room_4]
+            .filter((layer): layer is Tilemaps.TilemapLayer => !!layer)
+            .map(layer => ({
+                getTileAt: (tileX: number, tileY: number) =>
+                    layer.getTileAtWorldXY(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2),
+            }));
+        const toRectangles = (name: string) => (objectLayer?.objects ?? [])
+            .filter(object => object.name === name)
+            .map(object => ({
+                x: object.x ?? 0,
+                y: object.y ?? 0,
+                width: object.width ?? 0,
+                height: object.height ?? 0,
+            }));
+
+        return new MM6TilemapCollisionWorld(layers, toRectangles('wall'), toRectangles('ladder'));
+    }
+
     private handleObjects(objectLayer: Tilemaps.ObjectLayer | null) {
         objectLayer?.objects.forEach(object => {
             const { x = 0, y = 0, name, width = 0, height = 0 } = object;
 
             switch (name) {
                 case 'spawn_zone':
-                    this.playerController = new PlayerController(this, this.obstacles, this.interactions);
+                    if (!this.movementWorld) {
+                        throw new Error('Cold Mountains collision world was not initialized.');
+                    }
+                    this.playerController = new PlayerController(this, this.obstacles, this.interactions, {
+                        collisionWorld: this.movementWorld,
+                    });
                     if (this.playerController.spawnPosition.x == 0 && this.playerController.spawnPosition.y == 0)
                         this.playerController.spawnPosition = { x, y };
                     this.playerController.setSpritePosition(this.playerController.spawnPosition.x, this.playerController.spawnPosition.y);

@@ -262,7 +262,7 @@ export class PauseMenu extends Scene {
             const row = this.rows[i];
             const rowY = y + i * ROW_H;
             const selected = this.focus === 'weapons' && i === this.cursor;
-            this.drawIcon(x, rowY, row ? WEAPON_ICONS[row.weapon] : undefined, selected);
+            this.drawIcon(x, rowY, row ? WEAPON_ICONS[row.weapon] : undefined, selected, !selected);
 
             if (!row) continue;
             const color = selected ? COLORS.selected : COLORS.normal;
@@ -274,16 +274,39 @@ export class PauseMenu extends Scene {
         }
     }
 
-    private drawIcon(x: number, y: number, texture: string | undefined, selected: boolean) {
+    private drawIcon(x: number, y: number, texture: string | undefined, selected: boolean, grayscale = false) {
         const box = this.add.rectangle(x, y, ICON, ICON, COLORS.panel)
             .setOrigin(0)
             .setStrokeStyle(2, selected ? COLORS.frame : COLORS.line);
         this.content.add(box);
         if (texture && this.textures.exists(texture)) {
-            const image = this.add.image(x + ICON / 2, y + ICON / 2, texture, texture === 'life_tank' ? undefined : 0);
+            const frame = texture === 'life_tank' ? undefined : 0;
+            const key = grayscale ? this.getGrayTexture(texture, frame) : texture;
+            const image = this.add.image(x + ICON / 2, y + ICON / 2, key, grayscale ? undefined : frame);
             image.setScale(Math.min(1, (ICON - 6) / image.width, (ICON - 6) / image.height));
             this.content.add(image);
         }
+    }
+
+    // Black and white copy of a texture frame, built once and cached.
+    private getGrayTexture(texture: string, frame?: number): string {
+        const grayKey = `${texture}_gray`;
+        if (this.textures.exists(grayKey)) return grayKey;
+
+        const source = this.textures.getFrame(texture, frame);
+        const canvas = this.textures.createCanvas(grayKey, source.width, source.height);
+        if (!canvas) return texture;
+
+        const ctx = canvas.getContext();
+        ctx.drawImage(source.source.image as CanvasImageSource, source.cutX, source.cutY, source.width, source.height, 0, 0, source.width, source.height);
+        const data = ctx.getImageData(0, 0, source.width, source.height);
+        for (let i = 0; i < data.data.length; i += 4) {
+            const gray = Math.round(data.data[i] * 0.3 + data.data[i + 1] * 0.59 + data.data[i + 2] * 0.11);
+            data.data[i] = data.data[i + 1] = data.data[i + 2] = gray;
+        }
+        ctx.putImageData(data, 0, 0);
+        canvas.refresh();
+        return grayKey;
     }
 
     // Segmented bar; the default weapon has no energy limit, so it is always full.

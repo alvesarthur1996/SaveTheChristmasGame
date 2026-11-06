@@ -1338,13 +1338,17 @@ export default class PlayerController {
     }
 
     // Pushes the player away from `fromX` without damage or invincibility (e.g. a boss roar).
-    public applyPush(fromX: number): void {
+    public applyPush(
+        fromX: number,
+        steps: number = PlayerController.MM6_HITSTUN_STEPS,
+        speed: number = PlayerController.MM6_KNOCKBACK_SPEED,
+    ): void {
         const direction = this.sprite.x < fromX ? -1 : 1;
         if (this.mm6MovementActive && this.mm6Movement) {
             this.mm6Movement.applyKnockback(
-                direction * PlayerController.MM6_KNOCKBACK_SPEED,
+                direction * speed,
                 PlayerController.MM6_KNOCKBACK_LIFT,
-                PlayerController.MM6_HITSTUN_STEPS,
+                steps,
             );
         } else {
             this.sprite.setVelocityX(direction * 4.5);

@@ -45,6 +45,7 @@ export class PauseMenu extends Scene {
     private cursor = 0;
     private rows: Array<WeaponRow | undefined> = [];
     private armed = false;
+    private refilling = false;
     private keys!: Record<string, Phaser.Input.Keyboard.Key>;
     private padHeld = new Set<number>();
 
@@ -56,6 +57,7 @@ export class PauseMenu extends Scene {
         this.findPlayer();
         this.focus = 'weapons';
         this.armed = false;
+        this.refilling = false;
         this.primePad();
 
         const kb = this.input.keyboard!;
@@ -94,6 +96,7 @@ export class PauseMenu extends Scene {
         }
 
         const key = (name: string) => Phaser.Input.Keyboard.JustDown(this.keys[name]);
+        if (this.refilling) return;
         const pressed = (index: number) => {
             const down = !!pad?.buttons[index]?.pressed;
             const fresh = down && !this.padHeld.has(index);
@@ -148,10 +151,29 @@ export class PauseMenu extends Scene {
         if (this.focus === 'weapons') {
             const row = this.rows[this.cursor];
             if (row) this.playerController?.selectWeapon(row.weapon);
-        } else if (this.playerController?.useLifeTank()) {
-            this.sound.play('energy_up', { volume: this.getSfxVolume() });
+        } else if (this.playerController?.consumeLifeTank()) {
+            this.startRefill();
+            return;
         }
         this.render();
+    }
+
+    private startRefill() {
+        this.refilling = true;
+        this.render();
+        this.time.addEvent({
+            delay: 70,
+            repeat: MAX_ENERGY,
+            callback: () => {
+                const health = this.playerController?.addHealth(1) ?? MAX_ENERGY;
+                this.sound.play('energy_up', { volume: this.getSfxVolume() });
+                this.render();
+                if (health >= MAX_ENERGY) {
+                    this.refilling = false;
+                    this.time.removeAllEvents();
+                }
+            },
+        });
     }
 
     private playMove() {
@@ -324,6 +346,7 @@ export class PauseMenu extends Scene {
         this.findPlayer();
         this.focus = 'weapons';
         this.armed = false;
+        this.refilling = false;
         this.primePad();
         this.render();
     }

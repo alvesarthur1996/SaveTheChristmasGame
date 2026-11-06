@@ -133,6 +133,12 @@ export default class PlayerController {
         const storedLife: string = localStorage.getItem('lifeCounter') ?? String(this.lifeCounter);
         this.lifeCounter = parseInt(storedLife);
         this.lifeTanks = collectedItems.getTankCount();
+        // Debug: ?tanks=N starts the stage with at least N milk tanks.
+        const debugTanks = parseInt(new URLSearchParams(window.location.search).get('tanks') ?? '');
+        if (!isNaN(debugTanks) && debugTanks > this.lifeTanks) {
+            this.lifeTanks = debugTanks;
+            collectedItems.setTankCount(debugTanks);
+        }
         /** Start Joystick and Keyboard */
         this.startControllers(scene);
 
@@ -1195,6 +1201,23 @@ export default class PlayerController {
             return true;
         }
         return false;
+    }
+
+    // Consumes a tank without healing; the caller restores health step by step with addHealth.
+    public consumeLifeTank(): boolean {
+        if (this.lifeTanks > 0 && this.health < 28) {
+            this.lifeTanks--;
+            collectedItems.setTankCount(this.lifeTanks);
+            events.emit(GameEvents.LifeTankUsed);
+            return true;
+        }
+        return false;
+    }
+
+    public addHealth(amount: number): number {
+        this.health = Phaser.Math.Clamp(this.health + amount, 0, 28);
+        events.emit(GameEvents.HealthChanged, this.health);
+        return this.health;
     }
 
     update(time: number, delta: number): void {

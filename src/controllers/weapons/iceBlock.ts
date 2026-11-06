@@ -14,7 +14,7 @@ export default class IceBlock extends BulletShoot {
     ) {
         super(world, x, y, texture, bodyOptions, soundOptions);
         this.setIgnoreGravity(true);
-        this.setScale(1);
+        this.setScale(0.5);
         this.setFriction(0);
         this.setName(Weapons.IceBlock);
         this.setSensor(false);

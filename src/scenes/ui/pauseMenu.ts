@@ -29,6 +29,12 @@ const COLORS = {
 const SLOTS = 8;
 const ROW_H = 42;
 const ICON = 34;
+// The weapon sheets hold several animation frames and their loader frame sizes don't match the PNGs,
+// so each icon is cropped from the first frame region of the source image.
+const ICON_CROPS: Record<string, { x: number; y: number; w: number; h: number }> = {
+    snow_buster: { x: 0, y: 0, w: 31, h: 30 },
+    laser_beam: { x: 0, y: 0, w: 32, h: 15 },
+};
 const WEAPON_ICONS: Record<Weapons, string> = {
     [Weapons.SnowBuster]: 'snow_buster',
     [Weapons.CandyBoomerang]: 'candy_boomerang',
@@ -280,33 +286,34 @@ export class PauseMenu extends Scene {
             .setStrokeStyle(2, selected ? COLORS.frame : COLORS.line);
         this.content.add(box);
         if (texture && this.textures.exists(texture)) {
-            const frame = texture === 'life_tank' ? undefined : 0;
-            const key = grayscale ? this.getGrayTexture(texture, frame) : texture;
-            const image = this.add.image(x + ICON / 2, y + ICON / 2, key, grayscale ? undefined : frame);
+            const image = this.add.image(x + ICON / 2, y + ICON / 2, this.getIconTexture(texture, grayscale));
             image.setScale(Math.min(1, (ICON - 6) / image.width, (ICON - 6) / image.height));
             this.content.add(image);
         }
     }
 
-    // Black and white copy of a texture frame, built once and cached.
-    private getGrayTexture(texture: string, frame?: number): string {
-        const grayKey = `${texture}_gray`;
-        if (this.textures.exists(grayKey)) return grayKey;
+    // Builds a single-frame icon (optionally black and white) from the source image, cached per variant.
+    private getIconTexture(texture: string, grayscale: boolean): string {
+        const iconKey = `${texture}_icon${grayscale ? '_gray' : ''}`;
+        if (this.textures.exists(iconKey)) return iconKey;
 
-        const source = this.textures.getFrame(texture, frame);
-        const canvas = this.textures.createCanvas(grayKey, source.width, source.height);
+        const image = this.textures.get(texture).getSourceImage() as HTMLImageElement;
+        const crop = ICON_CROPS[texture] ?? { x: 0, y: 0, w: image.width, h: image.height };
+        const canvas = this.textures.createCanvas(iconKey, crop.w, crop.h);
         if (!canvas) return texture;
 
         const ctx = canvas.getContext();
-        ctx.drawImage(source.source.image as CanvasImageSource, source.cutX, source.cutY, source.width, source.height, 0, 0, source.width, source.height);
-        const data = ctx.getImageData(0, 0, source.width, source.height);
-        for (let i = 0; i < data.data.length; i += 4) {
-            const gray = Math.round(data.data[i] * 0.3 + data.data[i + 1] * 0.59 + data.data[i + 2] * 0.11);
-            data.data[i] = data.data[i + 1] = data.data[i + 2] = gray;
+        ctx.drawImage(image, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+        if (grayscale) {
+            const data = ctx.getImageData(0, 0, crop.w, crop.h);
+            for (let i = 0; i < data.data.length; i += 4) {
+                const gray = Math.round(data.data[i] * 0.3 + data.data[i + 1] * 0.59 + data.data[i + 2] * 0.11);
+                data.data[i] = data.data[i + 1] = data.data[i + 2] = gray;
+            }
+            ctx.putImageData(data, 0, 0);
         }
-        ctx.putImageData(data, 0, 0);
         canvas.refresh();
-        return grayKey;
+        return iconKey;
     }
 
     // Segmented bar; the default weapon has no energy limit, so it is always full.

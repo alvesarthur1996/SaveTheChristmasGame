@@ -128,7 +128,7 @@ export const GameUtils: any = {
         {
             spritesheet: "ice_block",
             spritesheet_path: "sprites/weapons/ice_block/ice_block",
-            config: { frameHeight: 16, frameWidth: 16 }
+            config: { frameHeight: 32, frameWidth: 32 }
         },
         {
             spritesheet: "laser_beam",

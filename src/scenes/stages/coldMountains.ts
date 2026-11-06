@@ -1,4 +1,5 @@
 import { Tilemaps } from "phaser";
+import { collectedItems } from "../../utils/collectedItems";
 import PlayerController from "../../controllers/characters/playerController";
 import EnemyController from "../../controllers/enemies/enemyController";
 import ObstaclesController from "../../controllers/obsctaclesController";
@@ -301,11 +302,14 @@ export default class ColdMountainsStage extends DefaultScene {
                     big_health.setData('health', HealthChange.BigHealth);
                     break;
                 case 'life_tank':
+                    const tankId = `${this.scene.key}:${object.id}`;
+                    if (collectedItems.isCollected(tankId)) break;
                     const life_tank = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'life_tank', undefined, {
                         isStatic: true,
                         isSensor: true
                     });
                     life_tank.setData('type', 'life_tank');
+                    life_tank.setData('pickupId', tankId);
                     break;
                 case 'ladder':
                     this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {

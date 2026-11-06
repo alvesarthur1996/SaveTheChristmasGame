@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { collectedItems } from '../../utils/collectedItems';
 import StateMachine from "../stateMachine";
 import { sharedInstance as events } from '../../scenes/eventCentre';
 import ObstaclesController from '../obsctaclesController';
@@ -131,7 +132,7 @@ export default class PlayerController {
 
         const storedLife: string = localStorage.getItem('lifeCounter') ?? String(this.lifeCounter);
         this.lifeCounter = parseInt(storedLife);
-        console.log('Life: ' + this.lifeCounter);
+        this.lifeTanks = collectedItems.getTankCount();
         /** Start Joystick and Keyboard */
         this.startControllers(scene);
 
@@ -690,6 +691,7 @@ export default class PlayerController {
                         this.scene.scene.stop('UI');
                         this.scene.scene.start(Stages.SelectStage);
                         localStorage.setItem('lifeCounter', '3');
+                        collectedItems.reset();
                         localStorage.setItem('spawnPosition', JSON.stringify({ x: 0, y: 0 }));
                     }
                 });
@@ -958,6 +960,29 @@ export default class PlayerController {
         this.scene.sound.play('energy_up', { volume: this.scene.SoundOptions.SFX / 10 });
     }
 
+    // Refills the current weapon; if it has unlimited energy (buster), refills the emptiest limited one.
+    private refillWeaponEnergy(amount: number): void {
+        let target: Weapons | null = this.currentWeaponEnergy !== null ? this.currentWeapon : null;
+        if (target === null) {
+            let lowest = Infinity;
+            this.weaponList.forEach((energy, weapon) => {
+                if (weapon !== this.currentWeapon && energy !== null && energy < lowest) {
+                    lowest = energy;
+                    target = weapon;
+                }
+            });
+        }
+        if (target === null) return;
+
+        if (target === this.currentWeapon) {
+            this.currentWeaponEnergy = Phaser.Math.Clamp((this.currentWeaponEnergy ?? 0) + amount, 0, 28);
+            events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+        } else {
+            this.weaponList.set(target, Phaser.Math.Clamp((this.weaponList.get(target) ?? 0) + amount, 0, 28));
+        }
+        this.playEnergyUpSound();
+    }
+
     private interactiveItemsHandler(gameObject: Phaser.Physics.Matter.Sprite) {
         const sprite = gameObject as Phaser.Physics.Matter.Sprite
         const type = sprite.getData('type');
@@ -965,6 +990,10 @@ export default class PlayerController {
         switch (type) {
             case 'life_tank':
                 this.lifeTanks++;
+                collectedItems.setTankCount(this.lifeTanks);
+                const pickupId: string | undefined = sprite.getData('pickupId');
+                if (pickupId) collectedItems.markCollected(pickupId);
+                this.playEnergyUpSound();
                 events.emit(GameEvents.CollectLifeTank);
                 sprite.destroy();
                 break;
@@ -976,9 +1005,7 @@ export default class PlayerController {
                 sprite.destroy();
                 break;
             case 'weapon_energy':
-                const energy: number = sprite.getData('weapon_energy') ?? 0;
-                this.currentWeaponEnergy = Phaser.Math.Clamp((this.currentWeaponEnergy ?? 0) + energy, 0, 28);
-                events.emit(GameEvents.WeaponEnergyChanged, { weaponName: this.currentWeapon, weaponEnergy: this.currentWeaponEnergy });
+                this.refillWeaponEnergy(sprite.getData('weapon_energy') ?? 0);
                 sprite.destroy();
                 break;
             case 'big_health':
@@ -1136,6 +1163,24 @@ export default class PlayerController {
         return this.lifeCounter;
     }
 
+    public getWeaponStatus(): Array<{ weapon: Weapons; energy: number | null; current: boolean }> {
+        return Array.from(this.weaponList.entries()).map(([weapon, energy]) => {
+            const current = weapon === this.currentWeapon;
+            return { weapon, energy: current ? this.currentWeaponEnergy : energy, current };
+        });
+    }
+
+    public selectWeapon(target: Weapons): void {
+        if (target === this.currentWeapon || !this.weaponList.has(target)) return;
+
+        this.weaponList.set(this.currentWeapon, this.currentWeaponEnergy);
+        const weaponEnergy = this.weaponList.get(target) ?? null;
+        this.currentWeaponEnergy = weaponEnergy;
+
+        events.emit(GameEvents.WeaponChanged, { weaponName: target, weaponEnergy });
+        this.changeWeapon(target);
+    }
+
     public getLifeTanks(): number {
         return this.lifeTanks;
     }
@@ -1143,6 +1188,7 @@ export default class PlayerController {
     public useLifeTank(): boolean {
         if (this.lifeTanks > 0 && this.health < 28) {
             this.lifeTanks--;
+            collectedItems.setTankCount(this.lifeTanks);
             this.health = 28; // Full health
             events.emit(GameEvents.HealthChanged, this.health);
             events.emit(GameEvents.LifeTankUsed);

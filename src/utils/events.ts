@@ -19,7 +19,7 @@ export enum GameEvents {
 
 export enum HealthChange {
     SmallHealth = 5,
-    BigHealth = 10,
+    BigHealth = 12,
     LifeTank = 28
 }
 

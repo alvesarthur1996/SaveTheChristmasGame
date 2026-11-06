@@ -1,4 +1,5 @@
 import { Tilemaps } from "phaser";
+import { collectedItems } from "../../utils/collectedItems";
 import PlayerController from "../../controllers/characters/playerController";
 import EnemyController from "../../controllers/enemies/enemyController";
 import ObstaclesController from "../../controllers/obsctaclesController";
@@ -397,6 +398,15 @@ export default class CandyLandStage extends DefaultScene {
                     weapon_energy.setData('type', 'weapon_energy');
                     weapon_energy.setData('weapon_energy', WeaponEnergyChange.SmallEnergy);
                     break;
+                case 'big_weapon_energy':
+                    const big_weapon_energy = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'weapon_energy', undefined, {
+                        isStatic: true,
+                        isSensor: true
+                    });
+                    big_weapon_energy.setScale(1.5);
+                    big_weapon_energy.setData('type', 'weapon_energy');
+                    big_weapon_energy.setData('weapon_energy', WeaponEnergyChange.BigEnergy);
+                    break;
                 case 'small_health':
                     const small_health = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'small_health', undefined, {
                         isStatic: true,
@@ -414,11 +424,14 @@ export default class CandyLandStage extends DefaultScene {
                     big_health.setData('health', HealthChange.BigHealth);
                     break;
                 case 'life_tank':
+                    const tankId = `${this.scene.key}:${object.id}`;
+                    if (collectedItems.isCollected(tankId)) break;
                     const life_tank = this.matter.add.sprite(x + (width / 2), y + (height / 2), 'life_tank', undefined, {
                         isStatic: true,
                         isSensor: true
                     });
                     life_tank.setData('type', 'life_tank');
+                    life_tank.setData('pickupId', tankId);
                     break;
                 case 'ladder':
                     this.matter.add.rectangle(x + (width / 2), y + (height / 2), width, height, {

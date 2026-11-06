@@ -1322,12 +1322,33 @@ export default class PlayerController {
     }
 
     private getIceBlockSolids() {
-        return this.shoots
+        const bossBlocks: Array<{ x: number; y: number; width: number; height: number }> =
+            (this.scene as any).bossController?.getSolidBlocks?.() ?? [];
+        const own = this.shoots
             .filter(shoot => shoot.name === Weapons.IceBlock && shoot.active && shoot.visible)
             .map(shoot => {
                 const { min, max } = (shoot.body as MatterJS.BodyType).bounds;
                 return { x: min.x, y: min.y, width: max.x - min.x, height: max.y - min.y };
             });
+        return [...own, ...bossBlocks];
+    }
+
+    public isGrounded(): boolean {
+        return !!this.isTouching.ground;
+    }
+
+    // Pushes the player away from `fromX` without damage or invincibility (e.g. a boss roar).
+    public applyPush(fromX: number): void {
+        const direction = this.sprite.x < fromX ? -1 : 1;
+        if (this.mm6MovementActive && this.mm6Movement) {
+            this.mm6Movement.applyKnockback(
+                direction * PlayerController.MM6_KNOCKBACK_SPEED,
+                PlayerController.MM6_KNOCKBACK_LIFT,
+                PlayerController.MM6_HITSTUN_STEPS,
+            );
+        } else {
+            this.sprite.setVelocityX(direction * 4.5);
+        }
     }
 
     private fireMM6Shot(state: Readonly<MM6PlayerState>): void {

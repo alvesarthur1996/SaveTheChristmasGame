@@ -1,50 +1,25 @@
-import IBoss from "../../../contracts/boss";
 import DefaultScene from "../../../scenes/defaultScene";
 import { sharedInstance as events } from "../../../scenes/eventCentre";
 import Boss, { BossAtlas, BossWeapon } from "../../../utils/boss";
-import { callWeaponClassDinamically } from "../../../utils/functions";
-import { Weapons } from "../../../utils/weapons";
-import BulletShoot from "../../bulletShoot";
-import StateMachine from "../../stateMachine";
-import IceBlock from "../../weapons/iceBlock";
-import { CollisionSensors, TouchingDetection } from "../playerController";
 import GameEvents from '../../../utils/events';
+import { Weapons } from "../../../utils/weapons";
+import StateMachine from "../../stateMachine";
+import BossController from "./bossController";
 
-export default class RudolphTheRedController implements IBoss {
-    private stateMachine: StateMachine;
-    private scene: DefaultScene
-    private player: Phaser.Physics.Matter.Sprite;
-    private sprite!: Phaser.Physics.Matter.Sprite;
-    private baseHealth = 28;
-    private health = this.baseHealth;
-    private invencibility = false;
-    private sensors!: CollisionSensors;
-    private isTouching!: TouchingDetection;
+export default class RudolphTheRedController extends BossController {
     public spawnPosition = { x: 0, y: 0 };
     public static shootDamage = 2;
     public static meleeDamage = 4;
-    private actionTime = 0;
-    private currentAction!: string;
-    private destroyed = false;
 
-
-    private weakness: Weapons = Weapons.IceBlock;
-
-
-    private weaponList: Array<BossWeapon> = [];
-    private currentWeapon!: BossWeapon;
-    private shoots: Array<BulletShoot> = [];
-
-
+    protected weakness: Weapons = Weapons.IceBlock;
+    // Rudolph's sprite sheet looks left when not flipped.
+    protected facesRightByDefault = false;
 
     constructor(scene: DefaultScene, player: Phaser.Physics.Matter.Sprite) {
-        // super(scene, player);
-        this.player = player;
-        this.scene = scene;
+        super(scene, player);
         this.stateMachine = new StateMachine(this, Boss.RudolphTheRed)
         this.createSprite();
         this.createAnimations();
-        this.isTouching = { left: false, right: false, ground: false };
 
         this.stateMachine
             .addState('idle', {
@@ -54,39 +29,19 @@ export default class RudolphTheRedController implements IBoss {
                 onEnter: this.moveOnEnter,
                 onUpdate: this.moveOnUpdate,
             })
-            // .addState('jump', {
-            //     onEnter: this.jumpOnEnter,
-            //     onUpdate: this.jumpOnUpdate,
-            // })
-            // .addState('hit', {
-            //     onEnter: this.hitOnEnter,
-            // })
             .addState('shoot', {
                 onEnter: this.shootOnEnter,
             })
-            .addState('damage_taken', {
-                onEnter: this.damageTakenOnEnter,
+            .addState('z_flight', {
+                onEnter: this.zFlightOnEnter,
+                onUpdate: this.zFlightOnUpdate,
             })
             .addState('death', {
                 onEnter: this.deathOnEnter
             })
             .setState('idle');
 
-        this.scene.matter.world.on('beforeupdate', this.resetTouching, this);
-        scene.matterCollision.addOnCollideStart({
-            objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite],
-            callback: this.onSensorCollide,
-            context: this
-        });
-        scene.matterCollision.addOnCollideActive({
-            objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite],
-            callback: this.onSensorCollide,
-            context: this
-        });
-
-        this.scene.events.on("update", this.update, this);
-        this.scene.events.once("shutdown", this.destroy, this);
-        this.scene.events.once("destroy", this.destroy, this);
+        this.registerCollisions();
 
         this.weaponList.push(BossWeapon.LaserBeam);
         this.changeWeapon(BossWeapon.LaserBeam);
@@ -96,75 +51,122 @@ export default class RudolphTheRedController implements IBoss {
         this.sprite.play('idle');
     }
 
-    private jumpOnEnter() {
-        this.sprite.setFrame('jump');
-        this.sprite.setVelocityY(-7);
-    }
-    private jumpOnUpdate() {
-        this.sprite.setFrame('jump');
-        let random = Math.ceil(Math.random() * 6);
-        if (random < 2)
-            this.sprite.flipX ? this.sprite.setVelocityX(-2) : this.sprite.setVelocityX(2);
-        else
-            this.sprite.flipX ? this.sprite.setVelocityX(-random) : this.sprite.setVelocityX(random);
-
-        if (this.isTouching.ground)
-            this.stateMachine.setState('idle');
-    }
-    private hitOnEnter() {
-        this.sprite.play('hit');
-    }
     private shootOnEnter() {
         this.sprite.play('shoot');
-        if (this.player.x < this.sprite.x)
-            this.sprite.flipX = false;
-        else
-            this.sprite.flipX = true;
+        this.facePlayer(false);
         const shoot = this.shoots.find(shoot => !shoot.active);
 
         if (shoot) {
-            setTimeout(() => {
-                shoot.fire(this.sprite);
-            }, 750);
+            // The laser leaves the cannon at a specific frame of the animation.
+            // Rudolph's sprite looks left when not flipped, so the laser direction is inverted.
+            this.scene.time.delayedCall(750, () => {
+                if (!this.destroyed && this.stateMachine.isCurrentState('shoot'))
+                    (shoot as any).fire(this.sprite, true);
+            });
         }
     }
+    private zWaypoints: Array<{ x: number; y: number }> = [];
+    private zIndex = 0;
+    private zTrailTimer = 0;
+    private zActive = false;
+
+    // Desperate move: Rudolph takes off and flies a Z across the room (top, diagonal, bottom),
+    // leaving a red trail. His body is a sensor while flying, so he crosses walls and the player
+    // can still be hit by contact.
+    private zFlightOnEnter() {
+        const view = this.scene.cameras.main.worldView;
+        const left = view.x + 70;
+        const right = view.right - 70;
+        const floorY = this.sprite.y;
+        const top = Math.max(view.y + 70, floorY - 220);
+
+        this.zWaypoints = [
+            { x: left, y: top },
+            { x: right, y: top },
+            { x: left, y: floorY },
+            { x: right, y: floorY },
+        ];
+        this.zIndex = 0;
+        this.zTrailTimer = 0;
+        this.zActive = true;
+
+        this.sprite.play('move');
+        this.setBodySensor(true);
+        this.sprite.setIgnoreGravity(true);
+        this.sprite.setVelocity(0, 0);
+        this.sprite.setTint(0xff5555);
+        this.scene.cameras.main.shake(250, 0.004);
+    }
+
+    private zFlightOnUpdate(delta: number) {
+        const target = this.zWaypoints[this.zIndex];
+        const dx = target.x - this.sprite.x;
+        const dy = target.y - this.sprite.y;
+        const dist = Math.hypot(dx, dy);
+        const speed = 5.5;
+
+        this.zTrailTimer += delta;
+        if (this.zTrailTimer >= 35) {
+            this.zTrailTimer = 0;
+            this.spawnAfterimage(0xff3333);
+        }
+
+        if (dist <= speed) {
+            this.zIndex++;
+            if (this.zIndex >= this.zWaypoints.length) {
+                this.endZFlight();
+                return;
+            }
+            return;
+        }
+
+        this.sprite.flipX = dx > 0;
+        this.sprite.setVelocity((dx / dist) * speed, (dy / dist) * speed);
+    }
+
+    // Matter checks `isSensor` per part, so the solid main part (index 1) must be toggled too.
+    private setBodySensor(value: boolean) {
+        const body = this.sprite.body as any;
+        body.isSensor = value;
+        body.parts[1].isSensor = value;
+    }
+
+    // Lifts the boss out of any solid geometry it ended up inside while flying as a sensor.
+    private unstickFromSolids() {
+        const { Query } = Phaser.Physics.Matter.Matter as any;
+        const main = (this.sprite.body as any).parts[1];
+        const solids = (this.scene.matter.world as any).getAllBodies().filter((b: any) =>
+            b.isStatic && !b.isSensor && b.parent === b && b !== main);
+        for (let i = 0; i < 80; i++) {
+            const hit = Query.region(solids, main.bounds).length > 0;
+            if (!hit) return;
+            this.sprite.setPosition(this.sprite.x, this.sprite.y - 4);
+        }
+    }
+
+    private endZFlight() {
+        this.zActive = false;
+        this.unstickFromSolids();
+        this.setBodySensor(false);
+        this.sprite.setIgnoreGravity(false);
+        this.sprite.setVelocity(0, 0);
+        this.sprite.clearTint();
+        this.actionTime = 0;
+        this.stateMachine.setState('idle');
+    }
+
     private moveOnEnter() {
+        this.facePlayer(false);
         this.sprite.play('move');
     }
     private moveOnUpdate() {
-        const speed = 3.25;
-        !this.sprite.flipX ? this.sprite.setVelocityX(-speed) : this.sprite.setVelocityX(speed);
-        if (this.isTouching.left || this.isTouching.right) {
-            this.sprite.flipX = !this.sprite.flipX;
+        const direction = this.facingDirection;
+        if (this.blockedByWall(direction)) {
+            this.sprite.setVelocityX(0);
             this.stateMachine.setState('idle');
+            return;
         }
-    }
-    private damageTakenOnEnter() {
-        this.invencibility = true
-        this.stateMachine.setState(this.currentAction);
-        const startColor = Phaser.Display.Color.ValueToColor(0xffffff)
-        const endColor = Phaser.Display.Color.ValueToColor(0x999999)
-        this.scene.tweens.addCounter({
-            from: 0,
-            to: 100,
-            duration: 100,
-            repeat: 8,
-            yoyo: true,
-            ease: Phaser.Math.Easing.Sine.InOut,
-            onUpdate: tween => {
-                const value = tween.getValue();
-                const colorObject = Phaser.Display.Color.Interpolate.ColorWithColor(startColor, endColor, 100, value)
-
-                const color = Phaser.Display.Color.GetColor(
-                    colorObject.r,
-                    colorObject.g,
-                    colorObject.b,
-                )
-
-                this.sprite.setTint(color);
-            },
-            onComplete: () => { this.invencibility = false }
-        });
+        this.sprite.setVelocityX(direction * 3.25);
     }
     private deathOnEnter() {
         this.scene.sound.play('death', { volume: 1 * (this.scene.SoundOptions.SFX / 10) });
@@ -239,86 +241,15 @@ export default class RudolphTheRedController implements IBoss {
             .setFixedRotation();
     }
 
-    public setSpritePosition(x: number, y: number): void {
-        this.sprite.setPosition(x, y);
-    }
-
-    private changeWeapon(weapon: BossWeapon) {
-        if (this.weaponList.filter(i => i == weapon).length)
-            this.currentWeapon = weapon;
-
-        this.shoots = [];
-        for (let i = 0; i <= 64; i++) {
-            const weapon = callWeaponClassDinamically(this.currentWeapon, {
-                world: this.scene.matter.world,
-                x: this.sprite.x,
-                y: this.sprite.y,
-                bodyOptions: {},
-                soundOptions: this.scene.SoundOptions
-            });
-            if (weapon) this.shoots.push(weapon);
-        }
-    }
-    protected onSensorCollide({ bodyA, bodyB, pair }) {
-
-        if (bodyB.gameObject instanceof BulletShoot && !this.invencibility) {
-            let damage = bodyB.gameObject.damage;
-            if (bodyB.gameObject.name == this.weakness) {
-                damage = damage + 4;
-            }
-            this.stateMachine.setState('damage_taken');
-            this.setHealth(this.health - damage);
-
-            if (bodyB.gameObject instanceof IceBlock) {
-                if (bodyA === this.sensors.left) {
-                    this.isTouching.left = true;
-                    if (pair && pair.separation > 0.5 && this.sprite.x) this.sprite.x += pair.separation - 0.5;
-                } else if (bodyA === this.sensors.right) {
-                    this.isTouching.right = true;
-                    if (pair && pair.separation > 0.5 && this.sprite.x) this.sprite.x -= pair.separation - 0.5;
-                }
-            }
-
-            return;
-        } else if (this.invencibility && bodyB.gameObject instanceof BulletShoot) {
-            return;
-        }
-
-        if (bodyA === this.sensors.left) {
-            this.isTouching.left = true;
-            if (pair.separation > 0.5) this.sprite.x += pair.separation - 0.5;
-        } else if (bodyA === this.sensors.right) {
-            this.isTouching.right = true;
-            if (pair.separation > 0.5) this.sprite.x -= pair.separation - 0.5;
-        } else if (bodyA === this.sensors.bottom) {
-            this.isTouching.ground = true;
-        }
-
-        if (bodyB?.gameObject instanceof Phaser.Physics.Matter.TileBody) {
-            return;
-        }
-    }
     protected setHealth(value: number) {
         this.health = Phaser.Math.Clamp(value, 0, this.baseHealth);
         events.emit(GameEvents.BossHealthChanged, this.health);
         if (this.health == 0)
             this.stateMachine.setState('death');
     }
-    protected resetTouching() {
-        this.isTouching = {
-            ground: false,
-            left: false,
-            right: false,
-        };
-    }
-
-    protected removeCollisionListeners() {
-        const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right, this.sprite];
-        this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
-        this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
-    }
-    private fightMode(delta: number) {
+    protected fightMode(delta: number) {
         if (!this.player) return;
+        if (this.zActive) return;
 
         this.actionTime += delta;
 
@@ -326,9 +257,10 @@ export default class RudolphTheRedController implements IBoss {
             this.actionTime = 0;
         if (this.actionTime > 0) return;
 
-
         let random = Phaser.Math.RND.between(0, 80);
-        if (random >= 0 && random < 45) {
+        if (this.desperate && this.currentAction !== 'z_flight' && random >= 55) {
+            this.currentAction = 'z_flight';
+        } else if (random >= 0 && random < 45) {
             this.currentAction = 'move';
         } else if (random >= 45 && random < 60) {
             this.currentAction = 'idle';
@@ -339,26 +271,5 @@ export default class RudolphTheRedController implements IBoss {
                 this.currentAction = 'idle';
         }
         this.stateMachine.setState(this.currentAction);
-    }
-
-
-    destroy() {
-        this.destroyed = true;
-        this.scene.events.off("update", this.update, this);
-        this.scene.events.off("shutdown", this.destroy, this);
-        this.scene.events.off("destroy", this.destroy, this);
-        if (this.scene.matter.world) {
-            this.scene.matter.world.off("beforeupdate", this.resetTouching, this);
-        }
-
-        this.removeCollisionListeners();
-
-        this.sprite.destroy();
-    }
-    update(time: number, dt: number) {
-        if (this.destroyed) return;
-        this.stateMachine.update(dt);
-        if (this.player)
-            this.fightMode(dt);
     }
 }

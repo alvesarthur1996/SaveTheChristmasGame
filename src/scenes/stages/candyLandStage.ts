@@ -6,8 +6,9 @@ import ObstaclesController from "../../controllers/obsctaclesController";
 import Stages, { StageSlugs } from "../../utils/stages";
 import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
-import GingerMadController from "../../controllers/characters/bosses/gingerMadController";
+import BossController from "../../controllers/characters/bosses/bossController";
 import Boss from "../../utils/boss";
+import { createBoss, getBossOverride, runBossIntro } from "../../utils/bossSelection";
 import GameEvents, { HealthChange, WeaponEnergyChange } from "../../utils/events";
 import DefaultScene from "../defaultScene";
 import CameraController from "../../controllers/cameraController";
@@ -357,11 +358,9 @@ export default class CandyLandStage extends DefaultScene {
 
                         setTimeout(() => {
                             if (this.bossController) return;
-                            // Test Spawn: {"x":1405.83035,"y":711.99965}
-                            let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
-                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
-                            // let gingerMad = new YetiController(this, this.playerController!.getSprite());
-                            this.bossController = gingerMad;
+                            const bossKind = getBossOverride() ?? Boss.GingerMad;
+                            const boss = createBoss(bossKind, this, this.playerController!.getSprite());
+                            this.bossController = boss;
                             this.bossController.setSpritePosition(x + 220, 548);
                             this.bossController.startIntro(y + 50);
                             events.emit(GameEvents.BossArrived, 0)
@@ -386,7 +385,7 @@ export default class CandyLandStage extends DefaultScene {
                             });
 
                             console.log("Boss activation");
-                            this.waitBossLanding(gingerMad);
+                            this.waitBossLanding(boss);
                         }, 1800);
                     });
                     break;
@@ -530,32 +529,10 @@ export default class CandyLandStage extends DefaultScene {
 
     // Boss intro: wait for the landing, fill the boss bar one unit at a time,
     // then give control back to the player.
-    private waitBossLanding(boss: GingerMadController) {
-        const landingCheck = this.time.addEvent({
-            delay: 50,
-            loop: true,
-            callback: () => {
-                if (!boss.isIntroLanded()) return;
-                landingCheck.remove(false);
-
-                this.fadeBossRoom(false, 1800, () => {
-                    let fill = 0;
-                    this.time.addEvent({
-                        delay: 100,
-                        repeat: 27,
-                        callback: () => {
-                            fill++;
-                            this.sound.play('energy_up', { volume: this.SoundOptions.SFX / 10 });
-                            events.emit(GameEvents.BossHealthChanged, fill);
-                            if (fill >= 28) {
-                                // Boss and player are released in the same tick.
-                                boss.finishIntro();
-                                this.releaseDoorCrossing();
-                            }
-                        },
-                    });
-                });
-            },
+    private waitBossLanding(boss: BossController) {
+        runBossIntro(this, boss, {
+            prepare: (start) => this.fadeBossRoom(false, 1800, start),
+            onFinish: () => this.releaseDoorCrossing(),
         });
     }
 

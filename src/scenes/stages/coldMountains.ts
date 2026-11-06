@@ -8,7 +8,8 @@ import { sharedInstance as events } from "../eventCentre";
 import InteractionsController from "../../controllers/interactionsController";
 import GameEvents, { HealthChange, RoomEvents } from "../../utils/events";
 import DefaultScene from "../defaultScene";
-import YetiController from "../../controllers/characters/bosses/yetiController";
+import Boss from "../../utils/boss";
+import { createBoss, getBossOverride, runBossIntro } from "../../utils/bossSelection";
 import { createParallaxImage } from "../../utils/functions";
 import MM6TilemapCollisionWorld from "../../mm6/engine/collision/MM6TilemapCollisionWorld";
 
@@ -276,11 +277,12 @@ export default class ColdMountainsStage extends DefaultScene {
 
                         setTimeout(() => {
                             if (this.bossController) return;
-                            // let gingerMad = new GingerMadController(this, this.playerController!.getSprite());
-                            // let gingerMad = new RudolphTheRedController(this, this.playerController!.getSprite());
-                            let gingerMad = new YetiController(this, this.playerController!.getSprite()); this.bossController = gingerMad;
-                            this.bossController.setSpritePosition(x + 220, y + 50);
-                            events.emit(GameEvents.BossArrived, 28)
+                            const bossKind = getBossOverride() ?? Boss.Yeti;
+                            this.bossController = createBoss(bossKind, this, this.playerController!.getSprite());
+                            this.bossController.setSpritePosition(x + 220, y - 120);
+                            this.bossController.startIntro(y + 50);
+                            events.emit(GameEvents.BossArrived, 0);
+                            runBossIntro(this, this.bossController);
                             console.log("Boss activation");
                         }, 2000);
                     });
